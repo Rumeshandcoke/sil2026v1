@@ -56,7 +56,14 @@ import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 // ─── GOOGLE SHEETS URL (HARDCODED) ──────────────────────────────
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwpBck6Dsu2X_1lf4Dm7052zy0NK09DXebc4UdJoTp29Ht8jbJ4Gl5GZrcPfB-Dnx7q/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzLA7EkhUJW4gGpu4k68x66yy6sj1F1EWXRD02v-GjMY8gQUg46GgQsjNef863SwMTH/exec';
+
+const generateBabyId = () => String(Date.now()).slice(-10);
+const generateScreeningId = () => {
+  const year = new Date().getFullYear().toString().slice(-2);
+  const uniqueDigits = String(Date.now()).slice(-10);
+  return `S-${year}-${uniqueDigits}`;
+};
 
 // ─── SHARED COMPONENTS ───────────────────────────────────────────
 
@@ -104,14 +111,17 @@ const Select = ({ label, error, children, ...props }) =>
 const RadioGroup = ({ label, options, value, onChange }) =>
   React.createElement('div', { className: "flex flex-col gap-2" },
     React.createElement('label', { className: "text-sm font-medium text-gray-700 ml-1" }, label),
-    React.createElement('div', { className: "flex flex-wrap gap-2" },
+    React.createElement('div', { className: "flex gap-1.5" },
       options.map(opt =>
         React.createElement('button', {
           key: opt.value,
           type: "button",
-          onClick: () => onChange(opt.value),
-          className: `flex-1 py-3 px-4 rounded-xl text-sm font-medium transition-colors border ${
-            value === opt.value
+          disabled: opt.disabled,
+          onClick: () => !opt.disabled && onChange(opt.value),
+          className: `flex-1 py-2.5 px-2 rounded-xl text-sm font-medium transition-colors border ${
+            opt.disabled 
+              ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
+              : value === opt.value
               ? 'bg-primary border-primary text-white shadow-md'
               : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
           }`
@@ -146,7 +156,7 @@ const LoginScreen = ({ onSuccess }) => {
 
   const handle = () => {
     if (!userId || !password) { setError('Please enter both User ID and Password'); return; }
-    const name = userId === 'admin' ? 'Arpita Jain' : `Dr. ${userId}`;
+    const name = userId === 'admin' ? 'Arpita Jain' : userId;
     onSuccess(name, userId);
   };
 
@@ -203,7 +213,8 @@ const MainMenuScreen = ({ record, onNewBaby }) =>
       React.createElement('div', { className: "flex justify-between items-center text-white mb-6" },
         React.createElement('div', null,
           React.createElement('h1', { className: "text-2xl font-bold" }, "Home"),
-          React.createElement('p', { className: "text-blue-200 text-sm opacity-90" }, record.hospitalName)
+          React.createElement('p', { className: "text-blue-200 text-sm opacity-90" }, record.hospitalName),
+          React.createElement('p', { className: "text-blue-100 text-xs opacity-75 mt-1" }, `Operator: ${record.hwName}`)
         ),
         React.createElement('div', { className: "w-10 h-10 bg-white/20 rounded-full flex items-center justify-center" },
           React.createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: "20", height: "20", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
@@ -237,9 +248,18 @@ const MainMenuScreen = ({ record, onNewBaby }) =>
 
 // ─── SCREEN 4: BABY REGISTRATION ─────────────────────────────────
 
-const BabyRegistrationScreen = ({ onBack, onNext }) => {
-  const [form, setForm] = useState({ babyName: '', dateOfBirth: '', gender: '', gestationalAge: '', parentName: '', parentPhone: '' });
-  const [riskFactors, setRiskFactors] = useState([]);
+const BabyRegistrationScreen = ({ onBack, onNext, initialData = {} }) => {
+  const [form, setForm] = useState({ 
+    babyId: initialData.babyId || generateBabyId(), 
+    babyName: initialData.babyName || '', 
+    dateOfBirth: initialData.dateOfBirth || '', 
+    gender: initialData.gender || '', 
+    gestationalAge: initialData.gestationalAge || '', 
+    parentName: initialData.parentName || '', 
+    parentPhone: initialData.parentPhone || '', 
+    parentEmail: initialData.parentEmail || '' 
+  });
+  const [riskFactors, setRiskFactors] = useState(initialData.riskFactors || []);
   const [error, setError] = useState('');
 
   const riskOptions = [
@@ -257,21 +277,36 @@ const BabyRegistrationScreen = ({ onBack, onNext }) => {
     if (!form.babyName || !form.dateOfBirth || !form.gender || !form.gestationalAge || !form.parentName || !form.parentPhone) {
       setError('Please fill out all required fields.'); return;
     }
-    const id = Math.floor(1000 + Math.random() * 9000);
-    onNext({ ...form, riskFactors, screeningId: `SCR-${new Date().getFullYear()}-${id}`, babyId: `BBY-${id}` });
+    if (form.parentName.length < 3) {
+      setError('Parent name must be at least 3 characters.'); return;
+    }
+    if (!/^\d{10}$/.test(form.parentPhone)) {
+      setError('Please enter a valid 10-digit phone number.'); return;
+    }
+    if (form.parentEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.parentEmail)) {
+      setError('Please enter a valid email address.'); return;
+    }
+    onNext({ ...form, riskFactors, screeningId: generateScreeningId() });
   };
 
   return React.createElement('div', { className: "flex flex-col min-h-screen pb-24" },
     React.createElement(Header, { title: "Patient Information", onBack }),
     React.createElement(Container, null,
+      React.createElement(Input, { label: "Baby ID", value: form.babyId, disabled: true, className: "opacity-60" }),
       React.createElement(Input, { label: "Baby's Name *", value: form.babyName, onChange: e => setForm({...form, babyName: e.target.value}) }),
-      React.createElement('div', { className: "flex gap-4 items-end" },
-        React.createElement(Input, { type: "date", label: "Date of Birth *", value: form.dateOfBirth, onChange: e => setForm({...form, dateOfBirth: e.target.value}) }),
-        React.createElement('div', { className: "w-1/2" },
+      React.createElement('div', { className: "flex gap-3 items-end" },
+        React.createElement('div', { className: "flex-1" },
+          React.createElement(Input, { type: "date", label: "Date of Birth *", max: new Date().toISOString().split('T')[0], value: form.dateOfBirth, onChange: e => setForm({...form, dateOfBirth: e.target.value}) })
+        ),
+        React.createElement('div', { className: "flex-1" },
           React.createElement(RadioGroup, { label: "Gender *", value: form.gender, onChange: v => setForm({...form, gender: v}), options: [{label:'M',value:'Male'},{label:'F',value:'Female'},{label:'O',value:'Other'}] })
         )
       ),
-      React.createElement(Input, { label: "Gestational Age (weeks) *", type: "number", placeholder: "e.g. 38", value: form.gestationalAge, onChange: e => setForm({...form, gestationalAge: e.target.value}) }),
+
+      React.createElement(Select, { label: "Gestational Age (weeks) *", value: form.gestationalAge, onChange: e => setForm({...form, gestationalAge: e.target.value}) },
+        React.createElement('option', { value: "", disabled: true }, "Select weeks..."),
+        ...(() => { const opts = []; for (let i = 25; i <= 50; i++) { opts.push(React.createElement('option', { key: i, value: i }, i)); } return opts; })()
+      ),
 
       React.createElement('div', { className: "flex flex-col gap-2" },
         React.createElement('label', { className: "text-sm font-medium text-gray-700 ml-1" }, "Risk Factors"),
@@ -288,8 +323,30 @@ const BabyRegistrationScreen = ({ onBack, onNext }) => {
 
       React.createElement('div', { className: "h-px bg-gray-200" }),
       React.createElement(Input, { label: "Parent / Guardian Name *", value: form.parentName, onChange: e => setForm({...form, parentName: e.target.value}) }),
-      React.createElement(Input, { label: "Phone Number *", type: "tel", value: form.parentPhone, onChange: e => setForm({...form, parentPhone: e.target.value}) }),
-      error && React.createElement('p', { className: "text-red-500 text-sm" }, error)
+      React.createElement(Input, { 
+        label: "Phone Number *", 
+        type: "tel", 
+        placeholder: "10-digit number", 
+        value: form.parentPhone, 
+        onChange: e => {
+          const val = e.target.value.replace(/\D/g, '');
+          setForm({...form, parentPhone: val});
+        },
+        maxLength: 10
+      }),
+      React.createElement(Input, { label: "Parent Email (Optional)", type: "email", placeholder: "email@example.com", value: form.parentEmail, onChange: e => setForm({...form, parentEmail: e.target.value}) }),
+      error && React.createElement('p', { className: "text-red-500 text-sm" }, error),
+      React.createElement('button', {
+        type: "button",
+        onClick: () => {
+          if (confirm('Clear all fields? Baby ID will remain.')) {
+            onClear();
+            setForm({ babyId: form.babyId, babyName: '', dateOfBirth: '', gender: '', gestationalAge: '', parentName: '', parentPhone: '', parentEmail: '' });
+            setRiskFactors([]);
+          }
+        },
+        className: "text-sm text-gray-500 hover:text-gray-700 underline mt-2"
+      }, "Clear All Fields")
     ),
     React.createElement(StickyBottom, null, React.createElement(Button, { onClick: handle }, "Continue to Test Selection"))
   );
@@ -314,63 +371,557 @@ const TestSelectionScreen = ({ onBack, onSelect }) =>
 
 // ─── SCREEN 6: AABR ENTRY ─────────────────────────────────────────
 
-const AABREntryScreen = ({ onBack, onNext }) => {
-  const [data, setData] = useState({ testEar: '', impedanceValue: '', snrValue: '', result35dB: '', result50dB: '', result70dB: '', result90dB: '' });
+const AABREntryScreen = ({ onBack, onNext, initialData = {} }) => {
+  const [activeTab, setActiveTab] = useState('left');
+  const [impedance, setImpedance] = useState({ 
+    vtxGnd: initialData.impedanceVtxGnd || '', 
+    gndRef: initialData.impedanceGndRef || '', 
+    refVtx: initialData.impedanceRefVtx || '' 
+  });
+  const [leftData, setLeftData] = useState({ 
+    result35dB: initialData.leftResult35dB || '', 
+    result50dB: initialData.leftResult50dB || '', 
+    result70dB: initialData.leftResult70dB || '', 
+    result90dB: initialData.leftResult90dB || '' 
+  });
+  const [rightData, setRightData] = useState({ 
+    result35dB: initialData.rightResult35dB || '', 
+    result50dB: initialData.rightResult50dB || '', 
+    result70dB: initialData.rightResult70dB || '', 
+    result90dB: initialData.rightResult90dB || '' 
+  });
   const [error, setError] = useState('');
 
   const resultOpts = [{label:'PASS',value:'PASS'},{label:'REFER',value:'REFER'},{label:'REDO',value:'REDO'}];
 
   const handle = () => {
-    if (!data.testEar || !data.impedanceValue || !data.snrValue || !data.result35dB || !data.result50dB || !data.result70dB || !data.result90dB) {
-      setError('All fields and results are required.'); return;
+    if (!impedance.vtxGnd || !impedance.gndRef || !impedance.refVtx) {
+      setError('All impedance values are required.'); return;
     }
-    onNext(data);
+    
+    const leftHasTest = leftData.result35dB || leftData.result50dB || leftData.result70dB || leftData.result90dB;
+    const rightHasTest = rightData.result35dB || rightData.result50dB || rightData.result70dB || rightData.result90dB;
+    
+    if (!leftHasTest && !rightHasTest) {
+      setError('At least one test result is required (any dB level, any ear).'); return;
+    }
+    
+    onNext({
+      impedanceVtxGnd: impedance.vtxGnd,
+      impedanceGndRef: impedance.gndRef,
+      impedanceRefVtx: impedance.refVtx,
+      leftResult35dB: leftData.result35dB || '',
+      leftResult50dB: leftData.result50dB || '',
+      leftResult70dB: leftData.result70dB || '',
+      leftResult90dB: leftData.result90dB || '',
+      rightResult35dB: rightData.result35dB || '',
+      rightResult50dB: rightData.result50dB || '',
+      rightResult70dB: rightData.result70dB || '',
+      rightResult90dB: rightData.result90dB || ''
+    });
   };
 
+  const currentData = activeTab === 'left' ? leftData : rightData;
+  const setCurrentData = activeTab === 'left' ? setLeftData : setRightData;
+
   return React.createElement('div', { className: "flex flex-col min-h-screen pb-24" },
-    React.createElement(Header, { title: "AABR Entry", subtitle: "Manual Result Entry", onBack }),
-    React.createElement(Container, { className: "gap-6" },
-      React.createElement(RadioGroup, { label: "Test Ear *", value: data.testEar, onChange: v => setData({...data, testEar: v}), options: [{label:'Left',value:'Left'},{label:'Right',value:'Right'},{label:'Both',value:'Both'}] }),
-      React.createElement('div', { className: "flex gap-4" },
-        React.createElement(Input, { label: "Impedance (kΩ) *", placeholder: "kΩ", value: data.impedanceValue, onChange: e => setData({...data, impedanceValue: e.target.value}) }),
-        React.createElement(Input, { label: "SNR (dB) *", placeholder: "dB", value: data.snrValue, onChange: e => setData({...data, snrValue: e.target.value}) })
+    React.createElement(Header, { title: "AABR Entry", subtitle: "Automated Auditory Brainstem Response", onBack }),
+    React.createElement(Container, { className: "gap-5" },
+      React.createElement('div', { className: "flex flex-col gap-2" },
+        React.createElement('label', { className: "text-sm font-medium text-gray-700 ml-1" }, "Impedance (kΩ) *"),
+        React.createElement('div', { className: "grid grid-cols-3 gap-3" },
+          React.createElement('div', null,
+            React.createElement('label', { className: "text-xs text-gray-500 ml-1 mb-1 block" }, "VTX - GND"),
+            React.createElement('input', {
+              type: "tel",
+              placeholder: "kΩ",
+              value: impedance.vtxGnd,
+              onChange: e => setImpedance({...impedance, vtxGnd: e.target.value}),
+              className: "w-full bg-secondary border-none rounded-xl px-3 py-3 text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20"
+            })
+          ),
+          React.createElement('div', null,
+            React.createElement('label', { className: "text-xs text-gray-500 ml-1 mb-1 block" }, "GND - REF"),
+            React.createElement('input', {
+              type: "tel",
+              placeholder: "kΩ",
+              value: impedance.gndRef,
+              onChange: e => setImpedance({...impedance, gndRef: e.target.value}),
+              className: "w-full bg-secondary border-none rounded-xl px-3 py-3 text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20"
+            })
+          ),
+          React.createElement('div', null,
+            React.createElement('label', { className: "text-xs text-gray-500 ml-1 mb-1 block" }, "REF - VTX"),
+            React.createElement('input', {
+              type: "tel",
+              placeholder: "kΩ",
+              value: impedance.refVtx,
+              onChange: e => setImpedance({...impedance, refVtx: e.target.value}),
+              className: "w-full bg-secondary border-none rounded-xl px-3 py-3 text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20"
+            })
+          )
+        )
       ),
-      React.createElement('div', { className: "bg-gray-50 rounded-2xl p-5 border border-gray-100 flex flex-col gap-5" },
-        React.createElement('h3', { className: "text-sm font-semibold text-gray-700 uppercase tracking-wider" }, "Results Grid"),
-        React.createElement(RadioGroup, { label: "35 dB", value: data.result35dB, onChange: v => setData({...data, result35dB: v}), options: resultOpts }),
-        React.createElement(RadioGroup, { label: "50 dB", value: data.result50dB, onChange: v => setData({...data, result50dB: v}), options: resultOpts }),
-        React.createElement(RadioGroup, { label: "70 dB", value: data.result70dB, onChange: v => setData({...data, result70dB: v}), options: resultOpts }),
-        React.createElement(RadioGroup, { label: "90 dB", value: data.result90dB, onChange: v => setData({...data, result90dB: v}), options: resultOpts })
+
+      React.createElement('div', { className: "flex gap-2 border-b border-gray-200" },
+        React.createElement('button', {
+          onClick: () => setActiveTab('left'),
+          className: `flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'left' ? 'border-primary text-primary' : 'border-transparent text-gray-500'}`
+        }, "Left Ear"),
+        React.createElement('button', {
+          onClick: () => setActiveTab('right'),
+          className: `flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'right' ? 'border-primary text-primary' : 'border-transparent text-gray-500'}`
+        }, "Right Ear")
       ),
+
+      React.createElement('div', { className: "bg-gray-50 rounded-2xl p-4 border border-gray-100 flex flex-col gap-4" },
+        React.createElement('h3', { className: "text-sm font-semibold text-gray-700 uppercase tracking-wider" }, 
+          activeTab === 'left' ? 'Left Ear Results' : 'Right Ear Results'
+        ),
+        React.createElement('div', { className: "flex flex-col gap-3" },
+          React.createElement(RadioGroup, { 
+            label: "90 dB", 
+            value: currentData.result90dB, 
+            onChange: v => setCurrentData({...currentData, result90dB: v}), 
+            options: resultOpts 
+          }),
+          React.createElement(RadioGroup, { 
+            label: "70 dB", 
+            value: currentData.result70dB, 
+            onChange: v => setCurrentData({...currentData, result70dB: v}), 
+            options: resultOpts
+          }),
+          React.createElement(RadioGroup, { 
+            label: "50 dB", 
+            value: currentData.result50dB, 
+            onChange: v => setCurrentData({...currentData, result50dB: v}), 
+            options: resultOpts
+          }),
+          React.createElement(RadioGroup, { 
+            label: "35 dB", 
+            value: currentData.result35dB, 
+            onChange: v => setCurrentData({...currentData, result35dB: v}), 
+            options: resultOpts
+          })
+        )
+      ),
+
       error && React.createElement('p', { className: "text-red-500 text-sm" }, error)
     ),
     React.createElement(StickyBottom, null, React.createElement(Button, { onClick: handle }, "Proceed to Recommendation"))
   );
 };
 
-// ─── SCREEN 7: OAE ENTRY ──────────────────────────────────────────
+// ─── SCREEN 7A: OAE TYPE SELECTION ────────────────────────────
 
-const OAEEntryScreen = ({ onBack, onNext }) => {
-  const [data, setData] = useState({ testEar: '', oae1Result: '', oae2Result: '' });
+const OAETypeScreen = ({ onBack, onNext }) => {
+  const [oaeType, setOaeType] = useState('');
+  const [error, setError] = useState('');
+
+  const handle = () => {
+    if (!oaeType) { setError('Please select OAE test type.'); return; }
+    onNext({ oaeTestType: oaeType });
+  };
+
+  return React.createElement('div', { className: "flex flex-col min-h-screen bg-gray-50 pb-16" },
+    React.createElement(Header, { title: "OAE Test Type", subtitle: "Select OAE Type", onBack }),
+    React.createElement(Container, { className: "flex-1 justify-center gap-6 pb-20" },
+      React.createElement(Card, { onClick: () => setOaeType('DPOAE'), className: "flex flex-col items-center justify-center p-10 py-16 gap-4 border-2 " + (oaeType === 'DPOAE' ? 'border-primary bg-blue-50' : 'border-transparent') },
+        React.createElement('h2', { className: "text-2xl font-bold text-primary tracking-wider" }, "DPOAE"),
+        React.createElement('p', { className: "text-sm text-gray-500 text-center" }, "Distortion Product OAE")
+      ),
+      React.createElement(Card, { onClick: () => setOaeType('TEOAE'), className: "flex flex-col items-center justify-center p-10 py-16 gap-4 border-2 " + (oaeType === 'TEOAE' ? 'border-primary bg-blue-50' : 'border-transparent') },
+        React.createElement('h2', { className: "text-2xl font-bold text-primary tracking-wider" }, "TEOAE"),
+        React.createElement('p', { className: "text-sm text-gray-500 text-center" }, "Transient Evoked OAE")
+      ),
+      error && React.createElement('p', { className: "text-red-500 text-sm text-center" }, error)
+    ),
+    oaeType && React.createElement(StickyBottom, null, React.createElement(Button, { onClick: handle }, "Continue to Protocol Selection"))
+  );
+};
+
+// ─── SCREEN 7B: OAE PROTOCOL SELECTION ────────────────────────────
+
+const OAEProtocolScreen = ({ oaeType, onBack, onNext }) => {
+  const [protocol, setProtocol] = useState('');
+  const [error, setError] = useState('');
+
+  const handle = () => {
+    if (!protocol) { setError('Please select a protocol.'); return; }
+    onNext({ oaeProtocol: protocol });
+  };
+
+  const dpoaeProtocols = {
+    '1-6 kHz': 'Testing frequencies: 1.5k, 2k, 3k, 4k, 6k Hz',
+    '2-4 kHz': 'Testing frequencies: 2k, 3k, 4k Hz',
+    '2-6 kHz': 'Testing frequencies: 2k, 3k, 4k, 5k, 6k Hz'
+  };
+
+  const teoaeProtocols = {
+    '8 seconds': 'Testing frequencies: 1.5k, 2k, 3k, 4k, 6k Hz',
+    '32 seconds': 'Testing frequencies: 1.5k, 2k, 3k, 4k, 6k Hz'
+  };
+
+  const protocols = oaeType === 'DPOAE' ? dpoaeProtocols : teoaeProtocols;
+
+  return React.createElement('div', { className: "flex flex-col min-h-screen pb-24" },
+    React.createElement(Header, { title: oaeType + " Protocol", subtitle: "Select Testing Protocol", onBack }),
+    React.createElement(Container, { className: "flex-1" },
+      React.createElement(Select, { label: "Protocol *", value: protocol, onChange: e => { setProtocol(e.target.value); setError(''); } },
+        React.createElement('option', { value: "", disabled: true }, "Select protocol..."),
+        oaeType === 'DPOAE' 
+          ? [
+              React.createElement('option', { key: '1', value: "1-6 kHz" }, "Protocol 1: 1-6 kHz"),
+              React.createElement('option', { key: '2', value: "2-4 kHz" }, "Protocol 2: 2-4 kHz"),
+              React.createElement('option', { key: '3', value: "2-6 kHz" }, "Protocol 3: 2-6 kHz")
+            ]
+          : [
+              React.createElement('option', { key: '1', value: "8 seconds" }, "8 seconds"),
+              React.createElement('option', { key: '2', value: "32 seconds" }, "32 seconds")
+            ]
+      ),
+      protocol && React.createElement(Card, { className: "bg-blue-50 border-blue-100" },
+        React.createElement('div', { className: "flex gap-3 items-start" },
+          React.createElement('svg', { className: "text-blue-500 shrink-0 mt-0.5", xmlns: "http://www.w3.org/2000/svg", width: "20", height: "20", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+            React.createElement('circle', { cx: "12", cy: "12", r: "10" }),
+            React.createElement('path', { d: "M12 16v-4" }),
+            React.createElement('path', { d: "M12 8h.01" })
+          ),
+          React.createElement('div', null,
+            React.createElement('p', { className: "text-sm font-semibold text-blue-900" }, protocol),
+            React.createElement('p', { className: "text-xs text-blue-700 mt-1" }, protocols[protocol])
+          )
+        )
+      ),
+      error && React.createElement('p', { className: "text-red-500 text-sm" }, error)
+    ),
+    React.createElement(StickyBottom, null, React.createElement(Button, { onClick: handle }, "Continue to OAE Entry"))
+  );
+};
+
+// ─── SCREEN 7C: OAE ENTRY (DPOAE - Dynamic) ──────────────────────────────────────────
+
+const DPOAEEntryScreen = ({ protocol, onBack, onNext }) => {
+  const [activeTab, setActiveTab] = useState('left');
+  
+  // Static state - ALL possible SNR fields created upfront
+  const [data, setData] = useState({
+    oaeLeftResult: '',
+    oaeRightResult: '',
+    snr1_5kLeft: '',
+    snr1_5kRight: '',
+    snr2kLeft: '',
+    snr2kRight: '',
+    snr3kLeft: '',
+    snr3kRight: '',
+    snr4kLeft: '',
+    snr4kRight: '',
+    snr5kLeft: '',
+    snr5kRight: '',
+    snr6kLeft: '',
+    snr6kRight: ''
+  });
   const [error, setError] = useState('');
 
   const resultOpts = [{label:'PASS',value:'PASS'},{label:'REFER',value:'REFER'}];
 
+  const frequencyConfigs = {
+    '1-6 kHz': [
+      { key: '1_5k', label: '1.5k Hz' },
+      { key: '2k', label: '2k Hz' },
+      { key: '3k', label: '3k Hz' },
+      { key: '4k', label: '4k Hz' },
+      { key: '6k', label: '6k Hz' }
+    ],
+    '2-4 kHz': [
+      { key: '2k', label: '2k Hz' },
+      { key: '3k', label: '3k Hz' },
+      { key: '4k', label: '4k Hz' }
+    ],
+    '2-6 kHz': [
+      { key: '2k', label: '2k Hz' },
+      { key: '3k', label: '3k Hz' },
+      { key: '4k', label: '4k Hz' },
+      { key: '5k', label: '5k Hz' },
+      { key: '6k', label: '6k Hz' }
+    ]
+  };
+
+  const frequencies = frequencyConfigs[protocol];
+
   const handle = () => {
-    if (!data.testEar || !data.oae1Result || !data.oae2Result) { setError('All fields are required.'); return; }
+    if (!data.oaeLeftResult || !data.oaeRightResult) { 
+      setError('Please select PASS or REFER for both ears.'); return; 
+    }
+    for (const freq of frequencies) {
+      if (!data['snr' + freq.key + 'Left'] || !data['snr' + freq.key + 'Right']) {
+        setError('All SNR fields are required.'); return;
+      }
+    }
+    
+    // Validate SNR-based PASS/REFER logic
+    const threshold = 6.0;
+    const requiredPasses = frequencies.length === 3 ? 2 : 3;
+    
+    const validateEar = (ear) => {
+      let passCount = 0;
+      for (const freq of frequencies) {
+        const snrValue = parseFloat(data['snr' + freq.key + ear]);
+        if (snrValue >= threshold) passCount++;
+      }
+      return passCount >= requiredPasses ? 'PASS' : 'REFER';
+    };
+    
+    const expectedLeft = validateEar('Left');
+    const expectedRight = validateEar('Right');
+    
+    if (data.oaeLeftResult !== expectedLeft || data.oaeRightResult !== expectedRight) {
+      const warning = 'WARNING: Based on SNR values (threshold: 6.0 dB):\n\n' +
+        'Left ear should be: ' + expectedLeft + ' (you selected: ' + data.oaeLeftResult + ')\n' +
+        'Right ear should be: ' + expectedRight + ' (you selected: ' + data.oaeRightResult + ')\n\n' +
+        'Click OK to proceed anyway, or Cancel to review.';
+      if (!confirm(warning)) { setError('Please review your selections.'); return; }
+    }
+    
     onNext(data);
   };
 
+  const SNRInput = ({ freqKey, label, ear }) => {
+    const fieldKey = 'snr' + freqKey + ear;
+    const snrOptions = [];
+    
+    // 0.0 to 30.0 in 0.1 steps
+    for (let i = 0; i <= 30; i += 0.1) {
+      snrOptions.push(i.toFixed(1));
+    }
+    // Add >30.0 option
+    snrOptions.push('>30.0');
+    
+    let value;
+    if (fieldKey === 'snr1_5kLeft') value = data.snr1_5kLeft;
+    else if (fieldKey === 'snr1_5kRight') value = data.snr1_5kRight;
+    else if (fieldKey === 'snr2kLeft') value = data.snr2kLeft;
+    else if (fieldKey === 'snr2kRight') value = data.snr2kRight;
+    else if (fieldKey === 'snr3kLeft') value = data.snr3kLeft;
+    else if (fieldKey === 'snr3kRight') value = data.snr3kRight;
+    else if (fieldKey === 'snr4kLeft') value = data.snr4kLeft;
+    else if (fieldKey === 'snr4kRight') value = data.snr4kRight;
+    else if (fieldKey === 'snr5kLeft') value = data.snr5kLeft;
+    else if (fieldKey === 'snr5kRight') value = data.snr5kRight;
+    else if (fieldKey === 'snr6kLeft') value = data.snr6kLeft;
+    else if (fieldKey === 'snr6kRight') value = data.snr6kRight;
+    
+    let setValue;
+    if (fieldKey === 'snr1_5kLeft') setValue = (val) => setData({...data, snr1_5kLeft: val});
+    else if (fieldKey === 'snr1_5kRight') setValue = (val) => setData({...data, snr1_5kRight: val});
+    else if (fieldKey === 'snr2kLeft') setValue = (val) => setData({...data, snr2kLeft: val});
+    else if (fieldKey === 'snr2kRight') setValue = (val) => setData({...data, snr2kRight: val});
+    else if (fieldKey === 'snr3kLeft') setValue = (val) => setData({...data, snr3kLeft: val});
+    else if (fieldKey === 'snr3kRight') setValue = (val) => setData({...data, snr3kRight: val});
+    else if (fieldKey === 'snr4kLeft') setValue = (val) => setData({...data, snr4kLeft: val});
+    else if (fieldKey === 'snr4kRight') setValue = (val) => setData({...data, snr4kRight: val});
+    else if (fieldKey === 'snr5kLeft') setValue = (val) => setData({...data, snr5kLeft: val});
+    else if (fieldKey === 'snr5kRight') setValue = (val) => setData({...data, snr5kRight: val});
+    else if (fieldKey === 'snr6kLeft') setValue = (val) => setData({...data, snr6kLeft: val});
+    else if (fieldKey === 'snr6kRight') setValue = (val) => setData({...data, snr6kRight: val});
+    
+    return React.createElement('div', { className: "flex items-center justify-between py-2" },
+      React.createElement('label', { className: "text-sm text-gray-700" }, label),
+      React.createElement('select', {
+        value: value || '',
+        onChange: e => setValue(e.target.value),
+        className: "w-20 bg-white border border-gray-300 rounded-lg px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary/30"
+      },
+        React.createElement('option', { value: '' }, '-- dB'),
+        snrOptions.map(val => React.createElement('option', { key: val, value: val }, val))
+      )
+    );
+  };
+
   return React.createElement('div', { className: "flex flex-col min-h-screen pb-24" },
-    React.createElement(Header, { title: "OAE Entry", subtitle: "Manual Result Entry", onBack }),
-    React.createElement(Container, { className: "gap-6" },
-      React.createElement(RadioGroup, { label: "Test Ear *", value: data.testEar, onChange: v => setData({...data, testEar: v}), options: [{label:'Left',value:'Left'},{label:'Right',value:'Right'},{label:'Both',value:'Both'}] }),
-      React.createElement('div', { className: "bg-gray-50 rounded-2xl p-5 border border-gray-100 flex flex-col gap-6" },
-        React.createElement('h3', { className: "text-sm font-semibold text-gray-700 uppercase tracking-wider" }, "Results"),
-        React.createElement(RadioGroup, { label: "OAE Test 1 *", value: data.oae1Result, onChange: v => setData({...data, oae1Result: v}), options: resultOpts }),
-        React.createElement('div', { className: "h-px bg-gray-200" }),
-        React.createElement(RadioGroup, { label: "OAE Test 2 *", value: data.oae2Result, onChange: v => setData({...data, oae2Result: v}), options: resultOpts })
+    React.createElement(Header, { title: "DPOAE Entry", subtitle: protocol, onBack }),
+    React.createElement(Container, { className: "gap-5" },
+      React.createElement('div', { className: "flex gap-2 border-b border-gray-200" },
+        React.createElement('button', {
+          onClick: () => setActiveTab('left'),
+          className: `flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'left' ? 'border-primary text-primary' : 'border-transparent text-gray-500'}`
+        }, "Left Ear"),
+        React.createElement('button', {
+          onClick: () => setActiveTab('right'),
+          className: `flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'right' ? 'border-primary text-primary' : 'border-transparent text-gray-500'}`
+        }, "Right Ear")
       ),
+
+      React.createElement('div', { className: "bg-gray-50 rounded-2xl p-4 border border-gray-100" },
+        React.createElement('h3', { className: "text-xs font-semibold text-gray-700 uppercase tracking-wider mb-3" }, 
+          activeTab === 'left' ? 'Left Ear' : 'Right Ear'
+        ),
+        React.createElement(RadioGroup, { 
+          label: "Result *", 
+          value: activeTab === 'left' ? data.oaeLeftResult : data.oaeRightResult, 
+          onChange: v => setData({...data, [activeTab === 'left' ? 'oaeLeftResult' : 'oaeRightResult']: v}), 
+          options: resultOpts 
+        }),
+        React.createElement('div', { className: "mt-4" },
+          frequencies.map(f => React.createElement(SNRInput, { 
+            key: f.key + (activeTab === 'left' ? 'L' : 'R'), 
+            freqKey: f.key, 
+            label: f.label, 
+            ear: activeTab === 'left' ? 'Left' : 'Right' 
+          }))
+        )
+      ),
+      
+      error && React.createElement('p', { className: "text-red-500 text-sm" }, error)
+    ),
+    React.createElement(StickyBottom, null, React.createElement(Button, { onClick: handle }, "Proceed to Recommendation"))
+  );
+};
+
+// ─── SCREEN 7D: OAE ENTRY (TEOAE - Fixed 5 frequencies) ──────────────────────────────────────────
+
+const TEOAEEntryScreen = ({ protocol, onBack, onNext }) => {
+  const [activeTab, setActiveTab] = useState('left');
+  const [data, setData] = useState({ 
+    oaeLeftResult: '', 
+    oaeRightResult: '',
+    snr1_5kLeft: '', snr1_5kRight: '',
+    snr2kLeft: '', snr2kRight: '',
+    snr3kLeft: '', snr3kRight: '',
+    snr4kLeft: '', snr4kRight: '',
+    snr6kLeft: '', snr6kRight: ''
+  });
+  const [error, setError] = useState('');
+
+  const resultOpts = [{label:'PASS',value:'PASS'},{label:'REFER',value:'REFER'}];
+
+  const frequencies = [
+    { key: '1_5k', label: '1.5k Hz' },
+    { key: '2k', label: '2k Hz' },
+    { key: '3k', label: '3k Hz' },
+    { key: '4k', label: '4k Hz' },
+    { key: '6k', label: '6k Hz' }
+  ];
+
+  const handle = () => {
+    // Check if left ear has any data
+    const leftHasData = data.oaeLeftResult || frequencies.some(f => data['snr' + f.key + 'Left']);
+    const rightHasData = data.oaeRightResult || frequencies.some(f => data['snr' + f.key + 'Right']);
+    
+    // If left ear has any data, all left fields must be filled
+    if (leftHasData) {
+      if (!data.oaeLeftResult) {
+        setError('Left ear: Result is required if any SNR is entered.'); return;
+      }
+      for (const freq of frequencies) {
+        if (!data['snr' + freq.key + 'Left']) {
+          setError('Left ear: All SNR fields are required if testing this ear.'); return;
+        }
+      }
+    }
+    
+    // If right ear has any data, all right fields must be filled
+    if (rightHasData) {
+      if (!data.oaeRightResult) {
+        setError('Right ear: Result is required if any SNR is entered.'); return;
+      }
+      for (const freq of frequencies) {
+        if (!data['snr' + freq.key + 'Right']) {
+          setError('Right ear: All SNR fields are required if testing this ear.'); return;
+        }
+      }
+    }
+    
+    // At least one ear must be tested
+    if (!leftHasData && !rightHasData) {
+      setError('At least one ear must be tested.'); return;
+    }
+    
+    onNext(data);
+  };
+
+  const SNRInput = ({ freqKey, label, ear }) => {
+    const fieldKey = 'snr' + freqKey + ear;
+    const snrOptions = [];
+    
+    // 0.0 to 30.0 in 0.1 steps
+    for (let i = 0; i <= 30; i += 0.1) {
+      snrOptions.push(i.toFixed(1));
+    }
+    // Add >30.0 option
+    snrOptions.push('>30.0');
+    
+    let value;
+    if (fieldKey === 'snr1_5kLeft') value = data.snr1_5kLeft;
+    else if (fieldKey === 'snr1_5kRight') value = data.snr1_5kRight;
+    else if (fieldKey === 'snr2kLeft') value = data.snr2kLeft;
+    else if (fieldKey === 'snr2kRight') value = data.snr2kRight;
+    else if (fieldKey === 'snr3kLeft') value = data.snr3kLeft;
+    else if (fieldKey === 'snr3kRight') value = data.snr3kRight;
+    else if (fieldKey === 'snr4kLeft') value = data.snr4kLeft;
+    else if (fieldKey === 'snr4kRight') value = data.snr4kRight;
+    else if (fieldKey === 'snr6kLeft') value = data.snr6kLeft;
+    else if (fieldKey === 'snr6kRight') value = data.snr6kRight;
+    
+    let setValue;
+    if (fieldKey === 'snr1_5kLeft') setValue = (val) => setData({...data, snr1_5kLeft: val});
+    else if (fieldKey === 'snr1_5kRight') setValue = (val) => setData({...data, snr1_5kRight: val});
+    else if (fieldKey === 'snr2kLeft') setValue = (val) => setData({...data, snr2kLeft: val});
+    else if (fieldKey === 'snr2kRight') setValue = (val) => setData({...data, snr2kRight: val});
+    else if (fieldKey === 'snr3kLeft') setValue = (val) => setData({...data, snr3kLeft: val});
+    else if (fieldKey === 'snr3kRight') setValue = (val) => setData({...data, snr3kRight: val});
+    else if (fieldKey === 'snr4kLeft') setValue = (val) => setData({...data, snr4kLeft: val});
+    else if (fieldKey === 'snr4kRight') setValue = (val) => setData({...data, snr4kRight: val});
+    else if (fieldKey === 'snr6kLeft') setValue = (val) => setData({...data, snr6kLeft: val});
+    else if (fieldKey === 'snr6kRight') setValue = (val) => setData({...data, snr6kRight: val});
+    
+    return React.createElement('div', { className: "flex items-center justify-between py-2" },
+      React.createElement('label', { className: "text-sm text-gray-700" }, label),
+      React.createElement('select', {
+        value: value || '',
+        onChange: e => setValue(e.target.value),
+        className: "w-20 bg-white border border-gray-300 rounded-lg px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary/30"
+      },
+        React.createElement('option', { value: '' }, '-- dB'),
+        snrOptions.map(val => React.createElement('option', { key: val, value: val }, val))
+      )
+    );
+  };
+
+  return React.createElement('div', { className: "flex flex-col min-h-screen pb-24" },
+    React.createElement(Header, { title: "TEOAE Entry", subtitle: protocol, onBack }),
+    React.createElement(Container, { className: "gap-5" },
+      React.createElement('div', { className: "flex gap-2 border-b border-gray-200" },
+        React.createElement('button', {
+          onClick: () => setActiveTab('left'),
+          className: `flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'left' ? 'border-primary text-primary' : 'border-transparent text-gray-500'}`
+        }, "Left Ear"),
+        React.createElement('button', {
+          onClick: () => setActiveTab('right'),
+          className: `flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'right' ? 'border-primary text-primary' : 'border-transparent text-gray-500'}`
+        }, "Right Ear")
+      ),
+
+      React.createElement('div', { className: "bg-gray-50 rounded-2xl p-4 border border-gray-100" },
+        React.createElement('h3', { className: "text-xs font-semibold text-gray-700 uppercase tracking-wider mb-3" }, 
+          activeTab === 'left' ? 'Left Ear' : 'Right Ear'
+        ),
+        React.createElement(RadioGroup, { 
+          label: "Result", 
+          value: activeTab === 'left' ? data.oaeLeftResult : data.oaeRightResult, 
+          onChange: v => setData({...data, [activeTab === 'left' ? 'oaeLeftResult' : 'oaeRightResult']: v}), 
+          options: resultOpts 
+        }),
+        React.createElement('div', { className: "mt-4" },
+          frequencies.map(f => React.createElement(SNRInput, { 
+            key: f.key + (activeTab === 'left' ? 'L' : 'R'), 
+            freqKey: f.key, 
+            label: f.label, 
+            ear: activeTab === 'left' ? 'Left' : 'Right' 
+          }))
+        )
+      ),
+      
       error && React.createElement('p', { className: "text-red-500 text-sm" }, error)
     ),
     React.createElement(StickyBottom, null, React.createElement(Button, { onClick: handle }, "Proceed to Recommendation"))
@@ -405,7 +956,7 @@ const RecommendationScreen = ({ onBack, onSave }) => {
             React.createElement('path', { d: "M12 16v-4" }),
             React.createElement('path', { d: "M12 8h.01" })
           ),
-          React.createElement('p', { className: "text-sm text-blue-900 leading-relaxed" }, "Clicking save will compile the complete Screening Record and push the data to Google Sheets. Ensure all information is accurate.")
+          React.createElement('p', { className: "text-sm text-blue-900 leading-relaxed" }, "Clicking save will compile the complete Screening Record and push the data to the database. Ensure all information is accurate.")
         )
       ),
       error && React.createElement('p', { className: "text-red-500 text-sm" }, error)
@@ -424,7 +975,7 @@ const SyncingScreen = () =>
     ),
     React.createElement('div', null,
       React.createElement('h2', { className: "text-xl font-semibold text-gray-800" }, "Saving Record..."),
-      React.createElement('p', { className: "text-gray-500 mt-2 text-sm" }, "Pushing data securely to Google Sheets.")
+      React.createElement('p', { className: "text-gray-500 mt-2 text-sm" }, "Pushing data securely to the database.")
     )
   );
 
@@ -468,7 +1019,7 @@ const saveToSheets = async (record) => {
 
 // ─── APP SHELL ───────────────────────────────────────────────────
 
-const STEP = { LOGIN:'LOGIN', SESSION:'SESSION', MENU:'MENU', BABY:'BABY', TEST_SELECT:'TEST_SELECT', AABR:'AABR', OAE:'OAE', REC:'REC', SYNCING:'SYNCING', SUCCESS:'SUCCESS' };
+const STEP = { LOGIN:'LOGIN', SESSION:'SESSION', MENU:'MENU', BABY:'BABY', TEST_SELECT:'TEST_SELECT', AABR:'AABR', OAE_TYPE:'OAE_TYPE', OAE_PROTOCOL:'OAE_PROTOCOL', OAE:'OAE', REC:'REC', SYNCING:'SYNCING', SUCCESS:'SUCCESS' };
 
 const App = () => {
   const [step, setStep] = useState(STEP.LOGIN);
@@ -489,6 +1040,11 @@ const App = () => {
     setStep(STEP.MENU);
   };
 
+  const clearBabyData = () => {
+    const { hwName, hwId, hospitalName, sessionDate } = record;
+    setRecord({ hwName, hwId, hospitalName, sessionDate });
+  };
+
   if (step === STEP.SYNCING) return React.createElement(SyncingScreen);
   if (step === STEP.SUCCESS) return React.createElement(SuccessScreen, { record, onReturn: returnToMenu });
 
@@ -496,10 +1052,15 @@ const App = () => {
     step === STEP.LOGIN        && React.createElement(LoginScreen, { onSuccess: (name, id) => { merge({hwName:name,hwId:id}); setStep(STEP.SESSION); } }),
     step === STEP.SESSION      && React.createElement(SessionSetupScreen, { initialData: record, onComplete: d => { merge(d); setStep(STEP.MENU); } }),
     step === STEP.MENU         && React.createElement(MainMenuScreen, { record, onNewBaby: () => setStep(STEP.BABY) }),
-    step === STEP.BABY         && React.createElement(BabyRegistrationScreen, { onBack: () => setStep(STEP.MENU), onNext: d => { merge(d); setStep(STEP.TEST_SELECT); } }),
-    step === STEP.TEST_SELECT  && React.createElement(TestSelectionScreen, { onBack: () => setStep(STEP.BABY), onSelect: t => { merge({testType:t}); setStep(t==='AABR'?STEP.AABR:STEP.OAE); } }),
-    step === STEP.AABR         && React.createElement(AABREntryScreen, { onBack: () => setStep(STEP.TEST_SELECT), onNext: d => { merge(d); setStep(STEP.REC); } }),
-    step === STEP.OAE          && React.createElement(OAEEntryScreen, { onBack: () => setStep(STEP.TEST_SELECT), onNext: d => { merge(d); setStep(STEP.REC); } }),
+    step === STEP.BABY         && React.createElement(BabyRegistrationScreen, { initialData: record, onBack: () => setStep(STEP.MENU), onNext: d => { merge(d); setStep(STEP.TEST_SELECT); }, onClear: clearBabyData }),
+    step === STEP.TEST_SELECT  && React.createElement(TestSelectionScreen, { onBack: () => setStep(STEP.BABY), onSelect: t => { merge({testType:t}); setStep(t==='AABR'?STEP.AABR:STEP.OAE_TYPE); } }),
+    step === STEP.AABR         && React.createElement(AABREntryScreen, { initialData: record, onBack: () => setStep(STEP.TEST_SELECT), onNext: d => { merge(d); setStep(STEP.REC); } }),
+    step === STEP.OAE_TYPE     && React.createElement(OAETypeScreen, { onBack: () => setStep(STEP.TEST_SELECT), onNext: d => { merge(d); setStep(STEP.OAE_PROTOCOL); } }),
+    step === STEP.OAE_PROTOCOL && React.createElement(OAEProtocolScreen, { oaeType: record.oaeTestType, onBack: () => setStep(STEP.OAE_TYPE), onNext: d => { merge(d); setStep(STEP.OAE); } }),
+    step === STEP.OAE          && (record.oaeTestType === 'DPOAE' 
+      ? React.createElement(DPOAEEntryScreen, { protocol: record.oaeProtocol, onBack: () => setStep(STEP.OAE_PROTOCOL), onNext: d => { merge(d); setStep(STEP.REC); } })
+      : React.createElement(TEOAEEntryScreen, { protocol: record.oaeProtocol, onBack: () => setStep(STEP.OAE_PROTOCOL), onNext: d => { merge(d); setStep(STEP.REC); } })
+    ),
     step === STEP.REC          && React.createElement(RecommendationScreen, { onBack: () => setStep(record.testType==='AABR'?STEP.AABR:STEP.OAE), onSave: handleSave })
   );
 };
