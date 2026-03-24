@@ -156,6 +156,12 @@ const StickyBottom = ({ children }) =>
   React.createElement('div', { className: "fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg" },
     React.createElement('div', { className: "max-w-[480px] mx-auto" }, children)
   );
+  
+  const VersionWatermark = () =>
+  React.createElement('div', { 
+    className: "fixed bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full z-50 font-mono"
+  }, "v2.0");
+  
   const ProfileModal = ({ user, onClose }) => {
   const [stats, setStats] = useState({ last30Days: 0, currentMonth: 0, monthName: '', loading: true });
 
@@ -417,6 +423,9 @@ const BabyRegistrationScreen = ({ user, initialData, onBack, onNext, onClear, on
   const validate = () => {
     const newErrors = {};
     if (!form.babyName.trim()) newErrors.babyName = "Required";
+    if (form.babyName && !/^[a-zA-Z\s.\-]+$/.test(form.babyName)) {
+      newErrors.babyName = "Only letters, spaces, hyphens and periods allowed";
+    }
     if (!form.dateOfBirth) newErrors.dateOfBirth = "Required";
     if (!form.gender) newErrors.gender = "Required";
     if (!form.gestationalAge) newErrors.gestationalAge = "Required";
@@ -685,27 +694,25 @@ const AABREntryScreen = ({ user, initialData, onBack, onNext, onProfileClick }) 
 
           activeTab === 'left' && React.createElement('div', { className: "space-y-3" },
             ['35dB', '50dB', '70dB', '90dB'].map(db =>
-              React.createElement(Select, {
+              React.createElement(RadioGroup, {
                 key: db,
                 label: db,
                 value: leftResults[`result${db}`],
-                onChange: (e) => setLeftResults({ ...leftResults, [`result${db}`]: e.target.value })
-              },
-                resultOptions.map(opt => React.createElement('option', { key: opt, value: opt }, opt || 'Select'))
-              )
+                onChange: (v) => setLeftResults({ ...leftResults, [`result${db}`]: v }),
+                options: [{label:'PASS',value:'PASS'},{label:'REFER',value:'REFER'},{label:'REDO',value:'REDO'}]
+              })
             )
           ),
 
           activeTab === 'right' && React.createElement('div', { className: "space-y-3" },
             ['35dB', '50dB', '70dB', '90dB'].map(db =>
-              React.createElement(Select, {
+              React.createElement(RadioGroup, {
                 key: db,
                 label: db,
                 value: rightResults[`result${db}`],
-                onChange: (e) => setRightResults({ ...rightResults, [`result${db}`]: e.target.value })
-              },
-                resultOptions.map(opt => React.createElement('option', { key: opt, value: opt }, opt || 'Select'))
-              )
+                onChange: (v) => setRightResults({ ...rightResults, [`result${db}`]: v }),
+                options: [{label:'PASS',value:'PASS'},{label:'REFER',value:'REFER'},{label:'REDO',value:'REDO'}]
+              })
             )
           ),
 
@@ -818,6 +825,16 @@ const DPOAEEntryScreen = ({ user, protocol, onBack, onNext, onProfileClick }) =>
 
   const handleNext = () => {
     if (validate()) {
+      const leftSnrValues = Object.values(leftSNR).filter(v => v && v !== '>30.0').map(v => parseFloat(v));
+      const rightSnrValues = Object.values(rightSNR).filter(v => v && v !== '>30.0').map(v => parseFloat(v));
+      
+      if (leftResult === 'PASS' && leftSnrValues.length > 0 && leftSnrValues.every(v => v < 6.0)) {
+        if (!confirm('Left ear marked as PASS but all SNR values are below 6.0 dB. Continue?')) return;
+      }
+      if (rightResult === 'PASS' && rightSnrValues.length > 0 && rightSnrValues.every(v => v < 6.0)) {
+        if (!confirm('Right ear marked as PASS but all SNR values are below 6.0 dB. Continue?')) return;
+      }
+      
       onNext({
         testType: 'OAE',
         oaeLeftResult: leftResult,
@@ -1113,15 +1130,17 @@ const RecommendationScreen = ({ user, record, onBack, onSubmit, onProfileClick }
               React.createElement('span', { className: "font-medium text-gray-800" }, record.testType)
             )
           ),
-          React.createElement('div', {},
-            React.createElement('label', { className: "text-sm font-medium text-gray-700 ml-1 mb-2 block" }, "Clinical Recommendation"),
-            React.createElement('textarea', {
-              value: recommendation,
-              onChange: (e) => setRecommendation(e.target.value),
-              placeholder: "Enter your clinical recommendation...",
-              rows: 6,
-              className: "w-full bg-secondary border-none rounded-xl px-4 py-3.5 text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
-            })
+          React.createElement(Select, {
+            label: "Clinical Recommendation",
+            value: recommendation,
+            onChange: (e) => setRecommendation(e.target.value)
+          },
+            React.createElement('option', { value: '' }, "Select recommendation"),
+            React.createElement('option', { value: 'Pass - No follow-up needed' }, "Pass - No follow-up needed"),
+            React.createElement('option', { value: 'Refer - Follow-up required' }, "Refer - Follow-up required"),
+            React.createElement('option', { value: 'Rescreen in 1 month' }, "Rescreen in 1 month"),
+            React.createElement('option', { value: 'Refer to audiologist' }, "Refer to audiologist"),
+            React.createElement('option', { value: 'Refer to ENT specialist' }, "Refer to ENT specialist")
           )
         )
       )
@@ -1244,6 +1263,7 @@ const App = () => {
   }
 
   return React.createElement('div', {},
+    React.createElement(VersionWatermark),
     step === STEP.LOGIN && React.createElement(LoginScreen, { masterData, onLogin: handleLogin }),
     step === STEP.SESSION && React.createElement(SessionSetupScreen, { user, masterData, initialData: record, onComplete: d => { merge(d); setStep(STEP.MENU); } }),
     step === STEP.MENU && React.createElement(MenuScreen, { user, onRegisterBaby: () => setStep(STEP.BABY), onProfileClick: () => setShowProfile(true) }),
@@ -1257,7 +1277,7 @@ const App = () => {
       : React.createElement(TEOAEEntryScreen, { user, protocol: record.oaeProtocol, onBack: () => setStep(STEP.OAE_PROTOCOL), onNext: d => { merge(d); setStep(STEP.REC); }, onProfileClick: () => setShowProfile(true) })
     ),
     step === STEP.REC && React.createElement(RecommendationScreen, { user, record, onBack: () => setStep(record.testType === 'AABR' ? STEP.AABR : STEP.OAE), onSubmit: handleSubmit, onProfileClick: () => setShowProfile(true) }),
-    step === STEP.SUCCESS && React.createElement(SuccessScreen, { user, record, onNewScreening: () => { setRecord({}); setStep(STEP.MENU); }, onProfileClick: () => setShowProfile(true) }),
+step === STEP.SUCCESS && React.createElement(SuccessScreen, { user, record, onNewScreening: () => { const sessionData = { hwName: record.hwName, hwId: record.hwId, ngo: record.ngo, hospitalName: record.hospitalName, deviceSerial: record.deviceSerial, sessionDate: record.sessionDate }; setRecord(sessionData); setStep(STEP.MENU); }, onProfileClick: () => setShowProfile(true) }),
     showProfile && user && React.createElement(ProfileModal, { user, onClose: () => setShowProfile(false) })
   );
 };
