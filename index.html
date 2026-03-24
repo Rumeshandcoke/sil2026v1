@@ -648,8 +648,6 @@ const AABREntryScreen = ({ user, initialData, onBack, onNext, onProfileClick }) 
       }
       
       onNext({
-        
-  };
         testType: 'AABR',
         impedanceVtxGnd: impedance.vtxGnd,
         impedanceGndRef: impedance.gndRef,
@@ -661,9 +659,11 @@ const AABREntryScreen = ({ user, initialData, onBack, onNext, onProfileClick }) 
         rightResult35dB: rightResults.result35dB,
         rightResult50dB: rightResults.result50dB,
         rightResult70dB: rightResults.result70dB,
-        rightResult90dB: rightResults.result90dB
+        rightResult90dB: rightResults.result90dB,
+        aabrOverrideNote: overrideNote
       });
     }
+  };
   };
 
   return React.createElement('div', { className: "min-h-screen flex flex-col pb-24" },
@@ -883,8 +883,6 @@ const DPOAEEntryScreen = ({ user, protocol, onBack, onNext, onProfileClick }) =>
       }
       
       onNext({
-        
-  };
         testType: 'OAE',
         oaeLeftResult: leftResult,
         oaeRightResult: rightResult,
@@ -899,7 +897,8 @@ const DPOAEEntryScreen = ({ user, protocol, onBack, onNext, onProfileClick }) =>
         snr3kRight: rightSNR['3k'] || '',
         snr4kRight: rightSNR['4k'] || '',
         snr5kRight: rightSNR['5k'] || '',
-        snr6kRight: rightSNR['6k'] || ''
+        snr6kRight: rightSNR['6k'] || '',
+        oaeOverrideNote: overrideNote
       });
     }
   };
