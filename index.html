@@ -56,7 +56,8 @@ import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 // ─── GOOGLE SHEETS URL (HARDCODED) ──────────────────────────────
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzLA7EkhUJW4gGpu4k68x66yy6sj1F1EWXRD02v-GjMY8gQUg46GgQsjNef863SwMTH/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyYGN_tvRRadnWNM6Osrpcx4tq4HoibvJCLUEEPcbOx5IBoRw7JCWCqe3N3KLZ7GLmu/exec';
+const MASTER_SHEET_ID = '16evdSZDgIx7DkP3X7rxzkT8p8YtXsLykdIPXeIXhxxM';
 
 const generateBabyId = () => String(Date.now()).slice(-10);
 const generateScreeningId = () => {
