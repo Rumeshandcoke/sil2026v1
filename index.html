@@ -160,7 +160,7 @@ const StickyBottom = ({ children }) =>
   const VersionWatermark = () =>
   React.createElement('div', { 
     className: "fixed bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full z-50 font-mono"
-  }, "v2.0");
+  }, "v2.73");
   
   const ProfileModal = ({ user, onClose }) => {
   const [stats, setStats] = useState({ last30Days: 0, currentMonth: 0, monthName: '', loading: true });
@@ -325,7 +325,7 @@ const SessionSetupScreen = ({ user, masterData, initialData, onComplete }) => {
             className: "opacity-50"
           }),
           React.createElement(Select, {
-            label: "Hospital",
+            label: "Hospital *",
             value: form.hospitalName,
             onChange: (e) => setForm({ ...form, hospitalName: e.target.value })
           },
@@ -333,7 +333,7 @@ const SessionSetupScreen = ({ user, masterData, initialData, onComplete }) => {
             hospitals.map((h, i) => React.createElement('option', { key: i, value: h }, h))
           ),
           React.createElement(Select, {
-            label: "Device Serial Number",
+            label: "Device Serial Number *",
             value: form.deviceSerial,
             onChange: (e) => setForm({ ...form, deviceSerial: e.target.value })
           },
@@ -341,7 +341,7 @@ const SessionSetupScreen = ({ user, masterData, initialData, onComplete }) => {
             devices.map((d, i) => React.createElement('option', { key: i, value: d }, d))
           ),
           React.createElement(Input, {
-            label: "Session Date",
+            label: "Session Date *",
             type: "date",
             value: form.sessionDate,
             max: new Date().toISOString().split('T')[0],
@@ -467,30 +467,28 @@ const BabyRegistrationScreen = ({ user, initialData, onBack, onNext, onClear, on
             className: "opacity-50 font-mono"
           }),
           React.createElement(Input, {
-            label: "Baby Name",
+            label: "Baby Name *",
             value: form.babyName,
             onChange: (e) => setForm({ ...form, babyName: e.target.value }),
             placeholder: "Enter baby's name",
             error: errors.babyName
           }),
-          React.createElement('div', { className: "grid grid-cols-2 gap-4" },
-            React.createElement(Input, {
-              label: "Date of Birth",
-              type: "date",
-              value: form.dateOfBirth,
-              max: new Date().toISOString().split('T')[0],
-              onChange: (e) => setForm({ ...form, dateOfBirth: e.target.value }),
-              error: errors.dateOfBirth
-            }),
-            React.createElement(RadioGroup, {
-              label: "Gender",
-              value: form.gender,
-              onChange: (v) => setForm({ ...form, gender: v }),
-              options: [{label:'M',value:'Male'},{label:'F',value:'Female'},{label:'O',value:'Other'}]
-            })
-          ),
+          React.createElement(Input, {
+            label: "Date of Birth *",
+            type: "date",
+            value: form.dateOfBirth,
+            max: new Date().toISOString().split('T')[0],
+            onChange: (e) => setForm({ ...form, dateOfBirth: e.target.value }),
+            error: errors.dateOfBirth
+          }),
+          React.createElement(RadioGroup, {
+            label: "Gender *",
+            value: form.gender,
+            onChange: (v) => setForm({ ...form, gender: v }),
+            options: [{label:'M',value:'Male'},{label:'F',value:'Female'},{label:'O',value:'Other'}]
+          }),
           React.createElement(Select, {
-            label: "Gestational Age (weeks)",
+            label: "Gestational Age (weeks) *",
             value: form.gestationalAge,
             onChange: (e) => setForm({ ...form, gestationalAge: e.target.value }),
             error: errors.gestationalAge
@@ -504,11 +502,11 @@ const BabyRegistrationScreen = ({ user, initialData, onBack, onNext, onClear, on
             label: "Parent/Guardian Name",
             value: form.parentName,
             onChange: (e) => setForm({ ...form, parentName: e.target.value }),
-            placeholder: "Enter parent's name",
+            placeholder: "Enter parent's name *",
             error: errors.parentName
           }),
           React.createElement(Input, {
-            label: "Phone Number",
+            label: "Phone Number *",
             type: "tel",
             value: form.parentPhone,
             onChange: (e) => setForm({ ...form, parentPhone: e.target.value.replace(/\D/g, '') }),
@@ -625,7 +623,47 @@ const AABREntryScreen = ({ user, initialData, onBack, onNext, onProfileClick }) 
 
   const handleNext = () => {
     if (validate()) {
+      const hasLeftResult = Object.values(leftResults).some(v => v);
+      const hasRightResult = Object.values(rightResults).some(v => v);
+      
+      let overrideNote = '';
+      
+      // Check if only one ear tested
+      if (hasLeftResult && !hasRightResult) {
+        if (!confirm('Only LEFT ear has been tested. Test the other ear or override this message.\n\nClick OK to override, Cancel to go back.')) {
+          return;
+        }
+        if (!confirm('Are you sure you want to override? If you proceed, the record will state that you chose to test only one ear.\n\nClick OK to confirm, Cancel to go back.')) {
+          return;
+        }
+        overrideNote = ' [Test was overridden - healthcare worker chose to test only LEFT ear]';
+      } else if (!hasLeftResult && hasRightResult) {
+        if (!confirm('Only RIGHT ear has been tested. Test the other ear or override this message.\n\nClick OK to override, Cancel to go back.')) {
+          return;
+        }
+        if (!confirm('Are you sure you want to override? If you proceed, the record will state that you chose to test only one ear.\n\nClick OK to confirm, Cancel to go back.')) {
+          return;
+        }
+        overrideNote = ' [Test was overridden - healthcare worker chose to test only RIGHT ear]';
+      }
+      
       onNext({
+        testType: 'AABR',
+        impedanceVtxGnd: impedance.vtxGnd,
+        impedanceGndRef: impedance.gndRef,
+        impedanceRefVtx: impedance.refVtx,
+        leftResult35dB: leftResults.result35dB,
+        leftResult50dB: leftResults.result50dB,
+        leftResult70dB: leftResults.result70dB,
+        leftResult90dB: leftResults.result90dB,
+        rightResult35dB: rightResults.result35dB,
+        rightResult50dB: rightResults.result50dB,
+        rightResult70dB: rightResults.result70dB,
+        rightResult90dB: rightResults.result90dB,
+        aabrOverrideNote: overrideNote
+      });
+    }
+  };
         testType: 'AABR',
         impedanceVtxGnd: impedance.vtxGnd,
         impedanceGndRef: impedance.gndRef,
@@ -654,7 +692,7 @@ const AABREntryScreen = ({ user, initialData, onBack, onNext, onProfileClick }) 
       React.createElement(Card, {},
         React.createElement('div', { className: "space-y-4" },
           React.createElement('div', {},
-            React.createElement('label', { className: "text-sm font-medium text-gray-700 ml-1 mb-2 block" }, "Impedance Values (kΩ)"),
+            React.createElement('label', { className: "text-sm font-medium text-gray-700 ml-1 mb-2 block" }, "Impedance Values (kΩ) *"),
             React.createElement('div', { className: "grid grid-cols-3 gap-2" },
               React.createElement(Input, {
                 placeholder: "VTX-GND",
@@ -835,7 +873,49 @@ const DPOAEEntryScreen = ({ user, protocol, onBack, onNext, onProfileClick }) =>
         if (!confirm('Right ear marked as PASS but all SNR values are below 6.0 dB. Continue?')) return;
       }
       
+      const hasLeftData = leftResult || Object.values(leftSNR).some(v => v);
+      const hasRightData = rightResult || Object.values(rightSNR).some(v => v);
+      
+      let overrideNote = '';
+      
+      if (hasLeftData && !hasRightData) {
+        if (!confirm('Only LEFT ear has been tested. Test the other ear or override this message.\n\nClick OK to override, Cancel to go back.')) {
+          return;
+        }
+        if (!confirm('Are you sure you want to override? If you proceed, the record will state that you chose to test only one ear.\n\nClick OK to confirm, Cancel to go back.')) {
+          return;
+        }
+        overrideNote = ' [Test was overridden - healthcare worker chose to test only LEFT ear]';
+      } else if (!hasLeftData && hasRightData) {
+        if (!confirm('Only RIGHT ear has been tested. Test the other ear or override this message.\n\nClick OK to override, Cancel to go back.')) {
+          return;
+        }
+        if (!confirm('Are you sure you want to override? If you proceed, the record will state that you chose to test only one ear.\n\nClick OK to confirm, Cancel to go back.')) {
+          return;
+        }
+        overrideNote = ' [Test was overridden - healthcare worker chose to test only RIGHT ear]';
+      }
+      
       onNext({
+        testType: 'OAE',
+        oaeLeftResult: leftResult,
+        oaeRightResult: rightResult,
+        snr1_5kLeft: leftSNR['1.5k'] || '',
+        snr2kLeft: leftSNR['2k'] || '',
+        snr3kLeft: leftSNR['3k'] || '',
+        snr4kLeft: leftSNR['4k'] || '',
+        snr5kLeft: leftSNR['5k'] || '',
+        snr6kLeft: leftSNR['6k'] || '',
+        snr1_5kRight: rightSNR['1.5k'] || '',
+        snr2kRight: rightSNR['2k'] || '',
+        snr3kRight: rightSNR['3k'] || '',
+        snr4kRight: rightSNR['4k'] || '',
+        snr5kRight: rightSNR['5k'] || '',
+        snr6kRight: rightSNR['6k'] || '',
+        oaeOverrideNote: overrideNote
+      });
+    }
+  };
         testType: 'OAE',
         oaeLeftResult: leftResult,
         oaeRightResult: rightResult,
@@ -1107,7 +1187,9 @@ const RecommendationScreen = ({ user, record, onBack, onSubmit, onProfileClick }
 
   const handleSubmit = async () => {
     setSubmitting(true);
-    await onSubmit({ recommendation });
+    const overrideNote = record.aabrOverrideNote || record.oaeOverrideNote || '';
+    const finalRecommendation = recommendation + overrideNote;
+    await onSubmit({ recommendation: finalRecommendation });
   };
 
   return React.createElement('div', { className: "min-h-screen flex flex-col pb-24" },
