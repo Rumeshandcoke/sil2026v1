@@ -30,7 +30,7 @@
 import React, { useState, useEffect, useContext, createContext } from 'react';
 import { createRoot } from 'react-dom/client';
 
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyYGN_tvRRadnWNM6Osrpcx4tq4HoibvJCLUEEPcbOx5IBoRw7JCWCqe3N3KLZ7GLmu/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxbFB95miXBgigXEtHPBuFozWtxwrNqOrXFSH50ODoiHA1E4Yo6oWoD0qSDSWK2txPI/exec';
 const MASTER_SHEET_ID = '16evdSZDgIx7DkP3X7rxzkT8p8YtXsLykdIPXeIXhxxM';
 
 const generateBabyId = () => String(Date.now()).slice(-10);
@@ -432,7 +432,7 @@ const Input = ({ label, error, ...props }) => React.createElement('div', { class
 const Select = ({ label, error, children, ...props }) => React.createElement('div', { className: 'space-y-2' }, label && React.createElement('label', { className: 'text-sm font-medium text-gray-700 ml-1 block' }, label), React.createElement('select', { ...props, className: 'w-full bg-secondary border-none rounded-xl px-4 py-3.5 text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/20' }, children), error && React.createElement('span', { className: 'text-xs text-red-500 ml-1' }, error));
 const RadioGroup = ({ label, value, onChange, options }) => React.createElement('div', { className: 'space-y-2' }, label && React.createElement('label', { className: 'text-sm font-medium text-gray-700 ml-1 block' }, label), React.createElement('div', { className: 'flex gap-2' }, options.map(opt => React.createElement('button', { key: opt.value, onClick: () => onChange(opt.value), className: `flex-1 py-3 px-4 rounded-xl font-medium transition-all ${value === opt.value ? 'bg-primary text-white' : 'bg-secondary text-gray-700 hover:bg-gray-300'}` }, opt.label))));
 const StickyBottom = ({ children }) => React.createElement('div', { className: "fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg" }, React.createElement('div', { className: "max-w-[480px] mx-auto" }, children));
-const VersionWatermark = () => React.createElement('div', { className: 'fixed bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full z-50 font-mono' }, 'v4.3');
+const VersionWatermark = () => React.createElement('div', { className: 'fixed bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full z-50 font-mono' }, 'v4.4');
 // Login Screen
 const LoginScreen = ({ onLogin }) => {
   const { t } = useTranslation();
