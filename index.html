@@ -31,7 +31,7 @@ import React, { useState, useEffect, useContext, createContext } from 'react';
 import { createRoot } from 'react-dom/client';
 
 // 🔧 VERSION - Update this single line for new releases
-const APP_VERSION = 'v6.4.1';
+const APP_VERSION = 'v6.4.2';
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxbFB95miXBgigXEtHPBuFozWtxwrNqOrXFSH50ODoiHA1E4Yo6oWoD0qSDSWK2txPI/exec';
 const MASTER_SHEET_ID = '16evdSZDgIx7DkP3X7rxzkT8p8YtXsLykdIPXeIXhxxM';
@@ -553,35 +553,35 @@ const SNRStepper = ({ value, onChange, label }) => {
     setShowWheel(false);
   };
   
-  return React.createElement('div', { className: 'space-y-2' },
-    React.createElement('label', { className: 'text-sm font-medium text-gray-700 ml-1 block' }, label),
-    React.createElement('div', { className: 'flex items-center gap-2' },
-      React.createElement('button', {
-        type: 'button',
-        onClick: () => adjustValue(-1.0),
-        className: 'w-12 h-12 bg-gray-200 rounded-xl font-bold text-gray-700 hover:bg-gray-300 active:bg-gray-400 transition-colors'
-      }, '−−'),
-      React.createElement('button', {
-        type: 'button',
-        onClick: () => adjustValue(-0.1),
-        className: 'w-12 h-12 bg-gray-200 rounded-xl font-bold text-gray-700 hover:bg-gray-300 active:bg-gray-400 transition-colors'
-      }, '−'),
-      React.createElement('button', {
-        type: 'button',
-        onClick: openWheel,
-        className: 'flex-1 h-12 bg-primary text-white rounded-xl font-semibold text-lg hover:bg-primary/90 transition-colors'
-      }, `${currentValue} dB`),
-      React.createElement('button', {
-        type: 'button',
-        onClick: () => adjustValue(0.1),
-        className: 'w-12 h-12 bg-gray-200 rounded-xl font-bold text-gray-700 hover:bg-gray-300 active:bg-gray-400 transition-colors'
-      }, '+'),
-      React.createElement('button', {
-        type: 'button',
-        onClick: () => adjustValue(1.0),
-        className: 'w-12 h-12 bg-gray-200 rounded-xl font-bold text-gray-700 hover:bg-gray-300 active:bg-gray-400 transition-colors'
-      }, '++')
-    ),
+return React.createElement('div', { className: 'space-y-1' },
+  React.createElement('label', { className: 'text-xs font-medium text-gray-600 ml-1 block' }, label),
+  React.createElement('div', { className: 'flex items-center gap-1' },
+    React.createElement('button', {
+      type: 'button',
+      onClick: () => adjustValue(-1.0),
+      className: 'w-10 h-10 bg-gray-200 rounded-lg font-bold text-sm text-gray-700 hover:bg-gray-300 active:bg-gray-400 transition-colors'
+    }, '−−'),
+    React.createElement('button', {
+      type: 'button',
+      onClick: () => adjustValue(-0.1),
+      className: 'w-10 h-10 bg-gray-200 rounded-lg font-bold text-sm text-gray-700 hover:bg-gray-300 active:bg-gray-400 transition-colors'
+    }, '−'),
+    React.createElement('button', {
+      type: 'button',
+      onClick: openWheel,
+      className: 'flex-1 h-10 bg-primary text-white rounded-lg font-bold text-base hover:bg-primary/90 transition-colors shadow-sm'
+    }, `${currentValue} dB`),
+    React.createElement('button', {
+      type: 'button',
+      onClick: () => adjustValue(0.1),
+      className: 'w-10 h-10 bg-gray-200 rounded-lg font-bold text-sm text-gray-700 hover:bg-gray-300 active:bg-gray-400 transition-colors'
+    }, '+'),
+    React.createElement('button', {
+      type: 'button',
+      onClick: () => adjustValue(1.0),
+      className: 'w-10 h-10 bg-gray-200 rounded-lg font-bold text-sm text-gray-700 hover:bg-gray-300 active:bg-gray-400 transition-colors'
+    }, '++')
+  ),
     showWheel && React.createElement('div', {
       className: 'fixed inset-0 bg-black/50 flex items-center justify-center z-50',
       onClick: () => setShowWheel(false)
