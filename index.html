@@ -31,7 +31,7 @@ import React, { useState, useEffect, useContext, createContext } from 'react';
 import { createRoot } from 'react-dom/client';
 
 // 🔧 VERSION - Update this single line for new releases
-const APP_VERSION = 'v6.0';
+const APP_VERSION = 'v6.1';
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxbFB95miXBgigXEtHPBuFozWtxwrNqOrXFSH50ODoiHA1E4Yo6oWoD0qSDSWK2txPI/exec';
 const MASTER_SHEET_ID = '16evdSZDgIx7DkP3X7rxzkT8p8YtXsLykdIPXeIXhxxM';
@@ -444,14 +444,16 @@ const LoginScreen = ({ onLogin }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const handleLogin = async () => {
-    setError(''); setLoading(true);
-    try {
-      const data = await fetchMasterData();
-      const user = data.healthcareWorkers.find(hw => hw[0] === form.username && hw[1] === form.password);
-      if (user) { onLogin({ hwId: user[0], password: user[1], hwName: user[2], ngo: user[3] }); }
-      else { setError(t('invalidCredentials')); setLoading(false); }
-    } catch (err) { setError('Failed to load data'); setLoading(false); }
-  };
+  setError(''); setLoading(true);
+  try {
+    const data = await fetchMasterData();
+    const user = data.healthcareWorkers.find(hw => 
+      hw[0].toLowerCase() === form.username.toLowerCase() && hw[1] === form.password
+    );
+    if (user) { onLogin({ hwId: user[0], password: user[1], hwName: user[2], ngo: user[3] }); }
+    else { setError(t('invalidCredentials')); setLoading(false); }
+  } catch (err) { setError('Failed to load data'); setLoading(false); }
+};
   return React.createElement('div', { className: 'min-h-screen flex flex-col' },
     React.createElement(Header, { title: 'Sohum Hearing Screener', subtitle: t('login') }),
     React.createElement(Container, { className: 'flex-1 justify-center' },
