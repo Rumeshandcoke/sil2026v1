@@ -31,7 +31,7 @@ import React, { useState, useEffect, useContext, createContext } from 'react';
 import { createRoot } from 'react-dom/client';
 
 // 🔧 VERSION - Update this single line for new releases
-const APP_VERSION = 'v6.5.3.1';
+const APP_VERSION = 'v6.5.4';
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxbFB95miXBgigXEtHPBuFozWtxwrNqOrXFSH50ODoiHA1E4Yo6oWoD0qSDSWK2txPI/exec';
 const MASTER_SHEET_ID = '16evdSZDgIx7DkP3X7rxzkT8p8YtXsLykdIPXeIXhxxM';
@@ -990,12 +990,22 @@ const DPOAEEntryScreen = ({ user, protocol, onBack, onNext, onProfileClick }) =>
     if (validate()) {
       const leftSnrValues = Object.values(leftSNR).filter(v => v && v !== '0.0' && v !== '>30.0').map(v => parseFloat(v));
 	  const rightSnrValues = Object.values(rightSNR).filter(v => v && v !== '0.0' && v !== '>30.0').map(v => parseFloat(v));
-      if (leftResult === 'PASS' && leftSnrValues.length > 0 && leftSnrValues.every(v => v < 6.0)) {
-        if (!confirm('Left ear marked as PASS but all SNR values are below 6.0 dB. Continue?')) return;
-      }
-      if (rightResult === 'PASS' && rightSnrValues.length > 0 && rightSnrValues.every(v => v < 6.0)) {
-        if (!confirm('Right ear marked as PASS but all SNR values are below 6.0 dB. Continue?')) return;
-      }
+      if (leftResult === 'PASS' && leftSnrValues.length > 0) {
+  const lowCount = leftSnrValues.filter(v => v < 6.0).length;
+  const requiredGood = Math.ceil(frequencies.length / 2); // 3 for 5 freqs, 2 for 3 freqs
+  const goodCount = leftSnrValues.filter(v => v >= 6.0).length;
+  if (goodCount < requiredGood) {
+    if (!confirm(`Left ear marked as PASS but only ${goodCount} out of ${frequencies.length} SNR values are above 6.0 dB (need at least ${requiredGood}). Continue?`)) return;
+  }
+}
+if (rightResult === 'PASS' && rightSnrValues.length > 0) {
+  const lowCount = rightSnrValues.filter(v => v < 6.0).length;
+  const requiredGood = Math.ceil(frequencies.length / 2); // 3 for 5 freqs, 2 for 3 freqs
+  const goodCount = rightSnrValues.filter(v => v >= 6.0).length;
+  if (goodCount < requiredGood) {
+    if (!confirm(`Right ear marked as PASS but only ${goodCount} out of ${frequencies.length} SNR values are above 6.0 dB (need at least ${requiredGood}). Continue?`)) return;
+  }
+}
       const hasLeftData = leftResult || Object.values(leftSNR).some(v => v && v !== '0.0');
       const hasRightData = rightResult || Object.values(rightSNR).some(v => v && v !== '0.0');
       let overrideNote = '';
@@ -1092,12 +1102,22 @@ const TEOAEEntryScreen = ({ user, protocol, onBack, onNext, onProfileClick }) =>
   if (validate()) {
     const leftSnrValues = Object.values(leftSNR).filter(v => v && v !== '0.0' && v !== '>30.0').map(v => parseFloat(v));
     const rightSnrValues = Object.values(rightSNR).filter(v => v && v !== '0.0' && v !== '>30.0').map(v => parseFloat(v));
-    if (leftResult === 'PASS' && leftSnrValues.length > 0 && leftSnrValues.every(v => v < 6.0)) {
-      if (!confirm('Left ear marked as PASS but all SNR values are below 6.0 dB. Continue?')) return;
-    }
-    if (rightResult === 'PASS' && rightSnrValues.length > 0 && rightSnrValues.every(v => v < 6.0)) {
-      if (!confirm('Right ear marked as PASS but all SNR values are below 6.0 dB. Continue?')) return;
-    }
+    iif (leftResult === 'PASS' && leftSnrValues.length > 0) {
+  const lowCount = leftSnrValues.filter(v => v < 6.0).length;
+  const requiredGood = Math.ceil(frequencies.length / 2); // 3 for 5 freqs, 2 for 3 freqs
+  const goodCount = leftSnrValues.filter(v => v >= 6.0).length;
+  if (goodCount < requiredGood) {
+    if (!confirm(`Left ear marked as PASS but only ${goodCount} out of ${frequencies.length} SNR values are above 6.0 dB (need at least ${requiredGood}). Continue?`)) return;
+  }
+}
+if (rightResult === 'PASS' && rightSnrValues.length > 0) {
+  const lowCount = rightSnrValues.filter(v => v < 6.0).length;
+  const requiredGood = Math.ceil(frequencies.length / 2); // 3 for 5 freqs, 2 for 3 freqs
+  const goodCount = rightSnrValues.filter(v => v >= 6.0).length;
+  if (goodCount < requiredGood) {
+    if (!confirm(`Right ear marked as PASS but only ${goodCount} out of ${frequencies.length} SNR values are above 6.0 dB (need at least ${requiredGood}). Continue?`)) return;
+  }
+}
     const hasLeftData = leftResult || Object.values(leftSNR).some(v => v && v !== '0.0');
     const hasRightData = rightResult || Object.values(rightSNR).some(v => v && v !== '0.0');
     let overrideNote = '';
