@@ -31,7 +31,7 @@ import React, { useState, useEffect, useContext, createContext } from 'react';
 import { createRoot } from 'react-dom/client';
 
 // 🔧 VERSION - Update this single line for new releases
-const APP_VERSION = 'v6.3';
+const APP_VERSION = 'v6.4.1';
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxbFB95miXBgigXEtHPBuFozWtxwrNqOrXFSH50ODoiHA1E4Yo6oWoD0qSDSWK2txPI/exec';
 const MASTER_SHEET_ID = '16evdSZDgIx7DkP3X7rxzkT8p8YtXsLykdIPXeIXhxxM';
@@ -523,6 +523,98 @@ const RiskFactorModal = ({ selectedKeys, onClose, onSave, lang }) => {
     )
   );
 };
+// SNR Stepper Component with Scroll Wheel
+const SNRStepper = ({ value, onChange, label }) => {
+  const [showWheel, setShowWheel] = useState(false);
+  const [wheelValue, setWheelValue] = useState(value || 10.0);
+  
+  // Generate values from 0.0 to 30.0 in 0.1 increments, plus ">30.0"
+  const allValues = [...Array(301).keys()].map(i => (i * 0.1).toFixed(1));
+  allValues.push('>30.0');
+  
+  const currentValue = value || 10.0;
+  
+  const adjustValue = (delta) => {
+    const current = parseFloat(currentValue);
+    if (isNaN(current)) return;
+    let newVal = current + delta;
+    if (newVal < 0) newVal = 0;
+    if (newVal > 30) newVal = 30;
+    onChange(newVal.toFixed(1));
+  };
+  
+  const openWheel = () => {
+    setWheelValue(currentValue);
+    setShowWheel(true);
+  };
+  
+  const saveWheel = () => {
+    onChange(wheelValue);
+    setShowWheel(false);
+  };
+  
+  return React.createElement('div', { className: 'space-y-2' },
+    React.createElement('label', { className: 'text-sm font-medium text-gray-700 ml-1 block' }, label),
+    React.createElement('div', { className: 'flex items-center gap-2' },
+      React.createElement('button', {
+        type: 'button',
+        onClick: () => adjustValue(-1.0),
+        className: 'w-12 h-12 bg-gray-200 rounded-xl font-bold text-gray-700 hover:bg-gray-300 active:bg-gray-400 transition-colors'
+      }, '−−'),
+      React.createElement('button', {
+        type: 'button',
+        onClick: () => adjustValue(-0.1),
+        className: 'w-12 h-12 bg-gray-200 rounded-xl font-bold text-gray-700 hover:bg-gray-300 active:bg-gray-400 transition-colors'
+      }, '−'),
+      React.createElement('button', {
+        type: 'button',
+        onClick: openWheel,
+        className: 'flex-1 h-12 bg-primary text-white rounded-xl font-semibold text-lg hover:bg-primary/90 transition-colors'
+      }, `${currentValue} dB`),
+      React.createElement('button', {
+        type: 'button',
+        onClick: () => adjustValue(0.1),
+        className: 'w-12 h-12 bg-gray-200 rounded-xl font-bold text-gray-700 hover:bg-gray-300 active:bg-gray-400 transition-colors'
+      }, '+'),
+      React.createElement('button', {
+        type: 'button',
+        onClick: () => adjustValue(1.0),
+        className: 'w-12 h-12 bg-gray-200 rounded-xl font-bold text-gray-700 hover:bg-gray-300 active:bg-gray-400 transition-colors'
+      }, '++')
+    ),
+    showWheel && React.createElement('div', {
+      className: 'fixed inset-0 bg-black/50 flex items-center justify-center z-50',
+      onClick: () => setShowWheel(false)
+    },
+      React.createElement('div', {
+        className: 'bg-white rounded-2xl p-6 w-80 shadow-xl',
+        onClick: (e) => e.stopPropagation()
+      },
+        React.createElement('h3', { className: 'text-lg font-semibold text-gray-800 mb-4 text-center' }, label),
+        React.createElement('select', {
+          value: wheelValue,
+          onChange: (e) => setWheelValue(e.target.value),
+          size: 10,
+          className: 'w-full text-center text-2xl font-bold border-2 border-primary rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-primary/50'
+        },
+          allValues.map(val => 
+            React.createElement('option', { key: val, value: val, className: 'text-xl py-2' }, `${val} dB`)
+          )
+        ),
+        React.createElement('div', { className: 'flex gap-3 mt-6' },
+          React.createElement('button', {
+            onClick: () => setShowWheel(false),
+            className: 'flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-300 transition-colors'
+          }, 'Cancel'),
+          React.createElement('button', {
+            onClick: saveWheel,
+            className: 'flex-1 py-3 px-4 bg-primary text-white rounded-xl font-medium hover:bg-primary/90 transition-colors'
+          }, 'Done')
+        )
+      )
+    )
+  );
+};
 const VersionWatermark = () => React.createElement('div', { className: 'fixed bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full z-50 font-mono' }, APP_VERSION);
 // Login Screen
 const LoginScreen = ({ onLogin }) => {
@@ -885,29 +977,35 @@ const DPOAEEntryScreen = ({ user, protocol, onBack, onNext, onProfileClick }) =>
             React.createElement('button', { onClick: () => setActiveTab('right'), className: `flex-1 py-3 text-sm font-medium transition-colors ${activeTab === 'right' ? 'text-primary border-b-2 border-primary' : 'text-gray-500'}` }, t('rightEar'))
           ),
           activeTab === 'left' && React.createElement('div', { className: 'space-y-4' },
-            React.createElement(Select, { label: t('result'), value: leftResult, onChange: (e) => setLeftResult(e.target.value), error: errors.leftResult },
-              React.createElement('option', { value: '' }, t('select')), React.createElement('option', { value: 'PASS' }, t('pass')), React.createElement('option', { value: 'REFER' }, t('refer'))
-            ),
-            React.createElement('div', {},
-              React.createElement('label', { className: 'text-sm font-medium text-gray-700 ml-1 mb-2 block' }, t('snrValues')),
-              React.createElement('div', { className: 'space-y-3' }, frequencies.map(freq => React.createElement(Select, { key: freq, label: `${freq} Hz`, value: leftSNR[freq], onChange: (e) => setLeftSNR({ ...leftSNR, [freq]: e.target.value }) },
-                React.createElement('option', { value: '' }, t('select')), snrOptions.map(val => React.createElement('option', { key: val, value: val }, val))
-              ))),
-              errors.leftSNR && React.createElement('span', { className: 'text-xs text-red-500 ml-1 mt-1 block' }, errors.leftSNR)
-            )
-          ),
-          activeTab === 'right' && React.createElement('div', { className: 'space-y-4' },
-            React.createElement(Select, { label: t('result'), value: rightResult, onChange: (e) => setRightResult(e.target.value), error: errors.rightResult },
-              React.createElement('option', { value: '' }, t('select')), React.createElement('option', { value: 'PASS' }, t('pass')), React.createElement('option', { value: 'REFER' }, t('refer'))
-            ),
-            React.createElement('div', {},
-              React.createElement('label', { className: 'text-sm font-medium text-gray-700 ml-1 mb-2 block' }, t('snrValues')),
-              React.createElement('div', { className: 'space-y-3' }, frequencies.map(freq => React.createElement(Select, { key: freq, label: `${freq} Hz`, value: rightSNR[freq], onChange: (e) => setRightSNR({ ...rightSNR, [freq]: e.target.value }) },
-                React.createElement('option', { value: '' }, t('select')), snrOptions.map(val => React.createElement('option', { key: val, value: val }, val))
-              ))),
-              errors.rightSNR && React.createElement('span', { className: 'text-xs text-red-500 ml-1 mt-1 block' }, errors.rightSNR)
-            )
-          ),
+  React.createElement(Select, { label: t('result'), value: leftResult, onChange: (e) => setLeftResult(e.target.value), error: errors.leftResult },
+    React.createElement('option', { value: '' }, t('select')), React.createElement('option', { value: 'PASS' }, t('pass')), React.createElement('option', { value: 'REFER' }, t('refer'))
+  ),
+  React.createElement('div', {},
+    React.createElement('label', { className: 'text-sm font-medium text-gray-700 ml-1 mb-2 block' }, t('snrValues')),
+    React.createElement('div', { className: 'space-y-3' }, frequencies.map(freq => React.createElement(SNRStepper, { 
+      key: freq, 
+      label: `${freq} Hz`, 
+      value: leftSNR[freq], 
+      onChange: (val) => setLeftSNR({ ...leftSNR, [freq]: val }) 
+    }))),
+    errors.leftSNR && React.createElement('span', { className: 'text-xs text-red-500 ml-1 mt-1 block' }, errors.leftSNR)
+  )
+),
+activeTab === 'right' && React.createElement('div', { className: 'space-y-4' },
+  React.createElement(Select, { label: t('result'), value: rightResult, onChange: (e) => setRightResult(e.target.value), error: errors.rightResult },
+    React.createElement('option', { value: '' }, t('select')), React.createElement('option', { value: 'PASS' }, t('pass')), React.createElement('option', { value: 'REFER' }, t('refer'))
+  ),
+  React.createElement('div', {},
+    React.createElement('label', { className: 'text-sm font-medium text-gray-700 ml-1 mb-2 block' }, t('snrValues')),
+    React.createElement('div', { className: 'space-y-3' }, frequencies.map(freq => React.createElement(SNRStepper, { 
+      key: freq, 
+      label: `${freq} Hz`, 
+      value: rightSNR[freq], 
+      onChange: (val) => setRightSNR({ ...rightSNR, [freq]: val }) 
+    }))),
+    errors.rightSNR && React.createElement('span', { className: 'text-xs text-red-500 ml-1 mt-1 block' }, errors.rightSNR)
+  )
+),
           errors.general && React.createElement('div', { className: 'text-sm text-red-500 text-center' }, errors.general)
         )
       )
@@ -959,29 +1057,35 @@ const TEOAEEntryScreen = ({ user, protocol, onBack, onNext, onProfileClick }) =>
             React.createElement('button', { onClick: () => setActiveTab('right'), className: `flex-1 py-3 text-sm font-medium transition-colors ${activeTab === 'right' ? 'text-primary border-b-2 border-primary' : 'text-gray-500'}` }, t('rightEar'))
           ),
           activeTab === 'left' && React.createElement('div', { className: 'space-y-4' },
-            React.createElement(Select, { label: t('result'), value: leftResult, onChange: (e) => setLeftResult(e.target.value), error: errors.leftResult },
-              React.createElement('option', { value: '' }, t('select')), React.createElement('option', { value: 'PASS' }, t('pass')), React.createElement('option', { value: 'REFER' }, t('refer'))
-            ),
-            React.createElement('div', {},
-              React.createElement('label', { className: 'text-sm font-medium text-gray-700 ml-1 mb-2 block' }, t('snrValues')),
-              React.createElement('div', { className: 'space-y-3' }, frequencies.map(freq => React.createElement(Select, { key: freq, label: `${freq} Hz`, value: leftSNR[freq], onChange: (e) => setLeftSNR({ ...leftSNR, [freq]: e.target.value }) },
-                React.createElement('option', { value: '' }, t('select')), snrOptions.map(val => React.createElement('option', { key: val, value: val }, val))
-              ))),
-              errors.leftSNR && React.createElement('span', { className: 'text-xs text-red-500 ml-1 mt-1 block' }, errors.leftSNR)
-            )
-          ),
-          activeTab === 'right' && React.createElement('div', { className: 'space-y-4' },
-            React.createElement(Select, { label: t('result'), value: rightResult, onChange: (e) => setRightResult(e.target.value), error: errors.rightResult },
-              React.createElement('option', { value: '' }, t('select')), React.createElement('option', { value: 'PASS' }, t('pass')), React.createElement('option', { value: 'REFER' }, t('refer'))
-            ),
-            React.createElement('div', {},
-              React.createElement('label', { className: 'text-sm font-medium text-gray-700 ml-1 mb-2 block' }, t('snrValues')),
-              React.createElement('div', { className: 'space-y-3' }, frequencies.map(freq => React.createElement(Select, { key: freq, label: `${freq} Hz`, value: rightSNR[freq], onChange: (e) => setRightSNR({ ...rightSNR, [freq]: e.target.value }) },
-                React.createElement('option', { value: '' }, t('select')), snrOptions.map(val => React.createElement('option', { key: val, value: val }, val))
-              ))),
-              errors.rightSNR && React.createElement('span', { className: 'text-xs text-red-500 ml-1 mt-1 block' }, errors.rightSNR)
-            )
-          ),
+  React.createElement(Select, { label: t('result'), value: leftResult, onChange: (e) => setLeftResult(e.target.value), error: errors.leftResult },
+    React.createElement('option', { value: '' }, t('select')), React.createElement('option', { value: 'PASS' }, t('pass')), React.createElement('option', { value: 'REFER' }, t('refer'))
+  ),
+  React.createElement('div', {},
+    React.createElement('label', { className: 'text-sm font-medium text-gray-700 ml-1 mb-2 block' }, t('snrValues')),
+    React.createElement('div', { className: 'space-y-3' }, frequencies.map(freq => React.createElement(SNRStepper, { 
+      key: freq, 
+      label: `${freq} Hz`, 
+      value: leftSNR[freq], 
+      onChange: (val) => setLeftSNR({ ...leftSNR, [freq]: val }) 
+    }))),
+    errors.leftSNR && React.createElement('span', { className: 'text-xs text-red-500 ml-1 mt-1 block' }, errors.leftSNR)
+  )
+),
+activeTab === 'right' && React.createElement('div', { className: 'space-y-4' },
+  React.createElement(Select, { label: t('result'), value: rightResult, onChange: (e) => setRightResult(e.target.value), error: errors.rightResult },
+    React.createElement('option', { value: '' }, t('select')), React.createElement('option', { value: 'PASS' }, t('pass')), React.createElement('option', { value: 'REFER' }, t('refer'))
+  ),
+  React.createElement('div', {},
+    React.createElement('label', { className: 'text-sm font-medium text-gray-700 ml-1 mb-2 block' }, t('snrValues')),
+    React.createElement('div', { className: 'space-y-3' }, frequencies.map(freq => React.createElement(SNRStepper, { 
+      key: freq, 
+      label: `${freq} Hz`, 
+      value: rightSNR[freq], 
+      onChange: (val) => setRightSNR({ ...rightSNR, [freq]: val }) 
+    }))),
+    errors.rightSNR && React.createElement('span', { className: 'text-xs text-red-500 ml-1 mt-1 block' }, errors.rightSNR)
+  )
+),
           errors.general && React.createElement('div', { className: 'text-sm text-red-500 text-center' }, errors.general)
         )
       )
