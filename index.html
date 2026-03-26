@@ -31,7 +31,7 @@ import React, { useState, useEffect, useContext, createContext } from 'react';
 import { createRoot } from 'react-dom/client';
 
 // 🔧 VERSION - Update this single line for new releases
-const APP_VERSION = 'v6.5.1';
+const APP_VERSION = 'v6.5.2';
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxbFB95miXBgigXEtHPBuFozWtxwrNqOrXFSH50ODoiHA1E4Yo6oWoD0qSDSWK2txPI/exec';
 const MASTER_SHEET_ID = '16evdSZDgIx7DkP3X7rxzkT8p8YtXsLykdIPXeIXhxxM';
@@ -570,13 +570,13 @@ const RiskFactorModal = ({ selectedKeys, onClose, onSave, lang }) => {
 // SNR Stepper Component with Scroll Wheel
 const SNRStepper = ({ value, onChange, label }) => {
   const [showWheel, setShowWheel] = useState(false);
-  const [wheelValue, setWheelValue] = useState(value || 10.0);
+  const [wheelValue, setWheelValue] = useState(value || 0.0);
   
   // Generate values from 0.0 to 30.0 in 0.1 increments, plus ">30.0"
   const allValues = [...Array(301).keys()].map(i => (i * 0.1).toFixed(1));
   allValues.push('>30.0');
   
-  const currentValue = value || 10.0;
+  const currentValue = value || 0.0;
   
   const adjustValue = (delta) => {
     const current = parseFloat(currentValue);
@@ -966,8 +966,8 @@ const DPOAEEntryScreen = ({ user, protocol, onBack, onNext, onProfileClick }) =>
   const frequencies = protocol === '1-6 kHz' ? ['1.5k', '2k', '3k', '4k', '6k'] : protocol === '2-4 kHz' ? ['2k', '3k', '4k'] : ['2k', '3k', '4k', '5k', '6k'];
   const [leftResult, setLeftResult] = useState('');
   const [rightResult, setRightResult] = useState('');
-  const [leftSNR, setLeftSNR] = useState(frequencies.reduce((acc, f) => ({ ...acc, [f]: '' }), {}));
-  const [rightSNR, setRightSNR] = useState(frequencies.reduce((acc, f) => ({ ...acc, [f]: '' }), {}));
+  const [leftSNR, setLeftSNR] = useState(frequencies.reduce((acc, f) => ({ ...acc, [f]: '0.0' }), {}));
+  const [rightSNR, setRightSNR] = useState(frequencies.reduce((acc, f) => ({ ...acc, [f]: '0.0' }), {}));
   const [errors, setErrors] = useState({});
   const snrOptions = []; for (let i = 0; i <= 300; i++) { snrOptions.push((i / 10).toFixed(1)); } snrOptions.push('>30.0');
   const validate = () => {
@@ -1068,8 +1068,8 @@ const TEOAEEntryScreen = ({ user, protocol, onBack, onNext, onProfileClick }) =>
   const frequencies = ['1.5k', '2k', '3k', '4k', '6k'];
   const [leftResult, setLeftResult] = useState('');
   const [rightResult, setRightResult] = useState('');
-  const [leftSNR, setLeftSNR] = useState(frequencies.reduce((acc, f) => ({ ...acc, [f]: '' }), {}));
-  const [rightSNR, setRightSNR] = useState(frequencies.reduce((acc, f) => ({ ...acc, [f]: '' }), {}));
+  const [leftSNR, setLeftSNR] = useState(frequencies.reduce((acc, f) => ({ ...acc, [f]: '0.0' }), {}));
+  const [rightSNR, setRightSNR] = useState(frequencies.reduce((acc, f) => ({ ...acc, [f]: '0.0' }), {}));
   const [errors, setErrors] = useState({});
   const snrOptions = []; for (let i = 0; i <= 300; i++) { snrOptions.push((i / 10).toFixed(1)); } snrOptions.push('>30.0');
   const validate = () => {
