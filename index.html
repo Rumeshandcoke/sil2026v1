@@ -31,7 +31,7 @@ import React, { useState, useEffect, useContext, createContext } from 'react';
 import { createRoot } from 'react-dom/client';
 
 // 🔧 VERSION - Update this single line for new releases
-const APP_VERSION = 'v6.5';
+const APP_VERSION = 'v6.5.1';
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxbFB95miXBgigXEtHPBuFozWtxwrNqOrXFSH50ODoiHA1E4Yo6oWoD0qSDSWK2txPI/exec';
 const MASTER_SHEET_ID = '16evdSZDgIx7DkP3X7rxzkT8p8YtXsLykdIPXeIXhxxM';
@@ -1224,13 +1224,14 @@ const saveToSheets = async (record) => {
     
     // Add GPS and metadata to submission
     const submissionData = {
-      ...record,
-      gpsLatitude: location.latitude,
-      gpsLongitude: location.longitude,
-      gpsAccuracy: location.accuracy,
-      submitTime: new Date().toISOString(),
-      appVersion: APP_VERSION
-    };
+  ...record,
+  testStartTime: record.testStartTime || new Date().toISOString(), // Fallback if missing
+  gpsLatitude: location.latitude,
+  gpsLongitude: location.longitude,
+  gpsAccuracy: location.accuracy,
+  submitTime: new Date().toISOString(),
+  appVersion: APP_VERSION
+};
     
     await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(submissionData) });
     return true;
@@ -1279,7 +1280,7 @@ const App = () => {
     step === STEP.SESSION && React.createElement(SessionSetupScreen, { user, masterData, initialData: record, onComplete: d => { merge(d); setStep(STEP.MENU); }, onProfileClick: () => setShowProfile(true) }),
     step === STEP.MENU && React.createElement(MenuScreen, { user, onRegisterBaby: () => setStep(STEP.BABY), onProfileClick: () => setShowProfile(true) }),
     step === STEP.BABY && React.createElement(BabyRegistrationScreen, { user, initialData: record, onBack: () => setStep(STEP.MENU), onNext: d => { merge(d); setStep(STEP.TEST_SELECT); }, onClear: clearBabyData, onProfileClick: () => setShowProfile(true) }),
-    step === STEP.TEST_SELECT && React.createElement(TestSelectionScreen, { user, onBack: () => setStep(STEP.BABY), onSelectAABR: () => setStep(STEP.AABR), onSelectOAE: () => setStep(STEP.OAE_TYPE), onProfileClick: () => setShowProfile(true) }),
+    step === STEP.TEST_SELECT && React.createElement(TestSelectionScreen, { user, onBack: () => setStep(STEP.BABY), onSelectAABR: () => { merge({ testStartTime: new Date().toISOString() }); setStep(STEP.AABR); }, onSelectOAE: () => { merge({ testStartTime: new Date().toISOString() }); setStep(STEP.OAE_TYPE); }, onProfileClick: () => setShowProfile(true) }),
     step === STEP.AABR && React.createElement(AABREntryScreen, { user, initialData: record, onBack: () => setStep(STEP.TEST_SELECT), onNext: d => { merge(d); setStep(STEP.REC); }, onProfileClick: () => setShowProfile(true) }),
     step === STEP.OAE_TYPE && React.createElement(OAETypeScreen, { user, onBack: () => setStep(STEP.TEST_SELECT), onNext: d => { merge(d); setStep(STEP.OAE_PROTOCOL); }, onProfileClick: () => setShowProfile(true) }),
     step === STEP.OAE_PROTOCOL && React.createElement(OAEProtocolScreen, { user, oaeType: record.oaeTestType, onBack: () => setStep(STEP.OAE_TYPE), onNext: d => { merge(d); setStep(STEP.OAE); }, onProfileClick: () => setShowProfile(true) }),
