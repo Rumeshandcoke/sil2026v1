@@ -31,7 +31,7 @@ import React, { useState, useEffect, useContext, createContext } from 'react';
 import { createRoot } from 'react-dom/client';
 
 // 🔧 VERSION - Update this single line for new releases
-const APP_VERSION = 'v6.4.3';
+const APP_VERSION = 'v6.5';
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxbFB95miXBgigXEtHPBuFozWtxwrNqOrXFSH50ODoiHA1E4Yo6oWoD0qSDSWK2txPI/exec';
 const MASTER_SHEET_ID = '16evdSZDgIx7DkP3X7rxzkT8p8YtXsLykdIPXeIXhxxM';
@@ -43,7 +43,51 @@ const generateScreeningId = () => {
   const uniqueDigits = String(Date.now()).slice(-10);
   return `S-${year}-${uniqueDigits}`;
 };
+const generateSessionId = () => 'SES-' + Date.now();
 
+// GPS Location with Smart Caching
+let lastLocation = null;
+let lastLocationTime = null;
+
+const getSmartLocation = () => {
+  return new Promise((resolve) => {
+    const now = Date.now();
+    const CACHE_DURATION = 15 * 60 * 1000; // 15 minutes
+    
+    // Use cached location if recent
+    if (lastLocation && lastLocationTime && (now - lastLocationTime) < CACHE_DURATION) {
+      resolve(lastLocation);
+      return;
+    }
+    
+    // Try to get new location
+    if (!navigator.geolocation) {
+      resolve({ latitude: '', longitude: '', accuracy: 'Not available' });
+      return;
+    }
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        lastLocation = {
+          latitude: position.coords.latitude.toFixed(6),
+          longitude: position.coords.longitude.toFixed(6),
+          accuracy: position.coords.accuracy ? `${Math.round(position.coords.accuracy)}m` : 'Unknown'
+        };
+        lastLocationTime = now;
+        resolve(lastLocation);
+      },
+      (error) => {
+        // If error, use last known location or empty
+        resolve(lastLocation || { latitude: '', longitude: '', accuracy: 'Permission denied' });
+      },
+      {
+        timeout: 5000,
+        maximumAge: 60000, // Accept 1-min-old location from device
+        enableHighAccuracy: false // Use network location (WiFi/cell), not GPS
+      }
+    );
+  });
+};
 const fetchMasterData = async () => {
   try {
     const baseUrl = `https://docs.google.com/spreadsheets/d/${MASTER_SHEET_ID}/gviz/tq?tqx=out:json`;
@@ -1175,7 +1219,20 @@ const SuccessScreen = ({ user, record, onSameBaby, onNewBaby, onProfileClick }) 
 const STEP = { LOADING: 'LOADING', LOGIN: 'LOGIN', SESSION: 'SESSION', MENU: 'MENU', BABY: 'BABY', TEST_SELECT: 'TEST_SELECT', AABR: 'AABR', OAE_TYPE: 'OAE_TYPE', OAE_PROTOCOL: 'OAE_PROTOCOL', OAE: 'OAE', REC: 'REC', SUCCESS: 'SUCCESS' };
 const saveToSheets = async (record) => {
   try {
-    await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(record) });
+    // Get GPS location
+    const location = await getSmartLocation();
+    
+    // Add GPS and metadata to submission
+    const submissionData = {
+      ...record,
+      gpsLatitude: location.latitude,
+      gpsLongitude: location.longitude,
+      gpsAccuracy: location.accuracy,
+      submitTime: new Date().toISOString(),
+      appVersion: APP_VERSION
+    };
+    
+    await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(submissionData) });
     return true;
   } catch (error) { console.error('Error saving:', error); return false; }
 };
