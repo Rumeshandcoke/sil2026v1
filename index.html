@@ -31,7 +31,7 @@ import React, { useState, useEffect, useContext, createContext } from 'react';
 import { createRoot } from 'react-dom/client';
 
 // 🔧 VERSION - Update this single line for new releases
-const APP_VERSION = 'v6.5.2';
+const APP_VERSION = 'v6.5.3';
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxbFB95miXBgigXEtHPBuFozWtxwrNqOrXFSH50ODoiHA1E4Yo6oWoD0qSDSWK2txPI/exec';
 const MASTER_SHEET_ID = '16evdSZDgIx7DkP3X7rxzkT8p8YtXsLykdIPXeIXhxxM';
@@ -971,33 +971,33 @@ const DPOAEEntryScreen = ({ user, protocol, onBack, onNext, onProfileClick }) =>
   const [errors, setErrors] = useState({});
   const snrOptions = []; for (let i = 0; i <= 300; i++) { snrOptions.push((i / 10).toFixed(1)); } snrOptions.push('>30.0');
   const validate = () => {
-    const newErrors = {};
-    const hasLeftData = leftResult || Object.values(leftSNR).some(v => v);
-    const hasRightData = rightResult || Object.values(rightSNR).some(v => v);
-    if (!hasLeftData && !hasRightData) { newErrors.general = t('atLeastOneEar'); setErrors(newErrors); return false; }
-    if (hasLeftData) {
-      if (!leftResult) newErrors.leftResult = t('resultRequired');
-      if (Object.values(leftSNR).every(v => !v)) newErrors.leftSNR = t('snrRequired');
-    }
-    if (hasRightData) {
-      if (!rightResult) newErrors.rightResult = t('resultRequired');
-      if (Object.values(rightSNR).every(v => !v)) newErrors.rightSNR = t('snrRequired');
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  const newErrors = {};
+  const hasLeftData = leftResult || Object.values(leftSNR).some(v => v && v !== '0.0');
+  const hasRightData = rightResult || Object.values(rightSNR).some(v => v && v !== '0.0');
+  if (!hasLeftData && !hasRightData) { newErrors.general = t('atLeastOneEar'); setErrors(newErrors); return false; }
+  if (hasLeftData) {
+    if (!leftResult) newErrors.leftResult = t('resultRequired');
+    if (Object.values(leftSNR).every(v => !v || v === '0.0')) newErrors.leftSNR = t('snrRequired');
+  }
+  if (hasRightData) {
+    if (!rightResult) newErrors.rightResult = t('resultRequired');
+    if (Object.values(rightSNR).every(v => !v || v === '0.0')) newErrors.rightSNR = t('snrRequired');
+  }
+  setErrors(newErrors);
+  return Object.keys(newErrors).length === 0;
+};
   const handleNext = () => {
     if (validate()) {
-      const leftSnrValues = Object.values(leftSNR).filter(v => v && v !== '>30.0').map(v => parseFloat(v));
-      const rightSnrValues = Object.values(rightSNR).filter(v => v && v !== '>30.0').map(v => parseFloat(v));
+      const leftSnrValues = Object.values(leftSNR).filter(v => v && v !== '0.0' && v !== '>30.0').map(v => parseFloat(v));
+	  const rightSnrValues = Object.values(rightSNR).filter(v => v && v !== '0.0' && v !== '>30.0').map(v => parseFloat(v));
       if (leftResult === 'PASS' && leftSnrValues.length > 0 && leftSnrValues.every(v => v < 6.0)) {
         if (!confirm('Left ear marked as PASS but all SNR values are below 6.0 dB. Continue?')) return;
       }
       if (rightResult === 'PASS' && rightSnrValues.length > 0 && rightSnrValues.every(v => v < 6.0)) {
         if (!confirm('Right ear marked as PASS but all SNR values are below 6.0 dB. Continue?')) return;
       }
-      const hasLeftData = leftResult || Object.values(leftSNR).some(v => v);
-      const hasRightData = rightResult || Object.values(rightSNR).some(v => v);
+      const hasLeftData = leftResult || Object.values(leftSNR).some(v => v && v !== '0.0');
+      const hasRightData = rightResult || Object.values(rightSNR).some(v => v && v !== '0.0');
       let overrideNote = '';
       if (hasLeftData && !hasRightData) {
         if (!confirm('Only LEFT ear has been tested. Test the other ear or override this message.\n\nClick OK to override, Cancel to go back.')) return;
@@ -1073,26 +1073,46 @@ const TEOAEEntryScreen = ({ user, protocol, onBack, onNext, onProfileClick }) =>
   const [errors, setErrors] = useState({});
   const snrOptions = []; for (let i = 0; i <= 300; i++) { snrOptions.push((i / 10).toFixed(1)); } snrOptions.push('>30.0');
   const validate = () => {
-    const newErrors = {};
-    const hasLeftData = leftResult || Object.values(leftSNR).some(v => v);
-    const hasRightData = rightResult || Object.values(rightSNR).some(v => v);
-    if (!hasLeftData && !hasRightData) { newErrors.general = t('atLeastOneEar'); setErrors(newErrors); return false; }
-    if (hasLeftData) {
-      if (!leftResult) newErrors.leftResult = t('resultRequired');
-      if (Object.values(leftSNR).every(v => !v)) newErrors.leftSNR = t('snrRequired');
-    }
-    if (hasRightData) {
-      if (!rightResult) newErrors.rightResult = t('resultRequired');
-      if (Object.values(rightSNR).every(v => !v)) newErrors.rightSNR = t('snrRequired');
-    }
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  const newErrors = {};
+  const hasLeftData = leftResult || Object.values(leftSNR).some(v => v && v !== '0.0');
+  const hasRightData = rightResult || Object.values(rightSNR).some(v => v && v !== '0.0');
+  if (!hasLeftData && !hasRightData) { newErrors.general = t('atLeastOneEar'); setErrors(newErrors); return false; }
+  if (hasLeftData) {
+    if (!leftResult) newErrors.leftResult = t('resultRequired');
+    if (Object.values(leftSNR).every(v => !v || v === '0.0')) newErrors.leftSNR = t('snrRequired');
+  }
+  if (hasRightData) {
+    if (!rightResult) newErrors.rightResult = t('resultRequired');
+    if (Object.values(rightSNR).every(v => !v || v === '0.0')) newErrors.rightSNR = t('snrRequired');
+  }
+  setErrors(newErrors);
+  return Object.keys(newErrors).length === 0;
+};
   const handleNext = () => {
-    if (validate()) {
-      onNext({ testType: 'OAE', oaeLeftResult: leftResult, oaeRightResult: rightResult, snr1_5kLeft: leftSNR['1.5k'] || '', snr2kLeft: leftSNR['2k'] || '', snr3kLeft: leftSNR['3k'] || '', snr4kLeft: leftSNR['4k'] || '', snr6kLeft: leftSNR['6k'] || '', snr1_5kRight: rightSNR['1.5k'] || '', snr2kRight: rightSNR['2k'] || '', snr3kRight: rightSNR['3k'] || '', snr4kRight: rightSNR['4k'] || '', snr6kRight: rightSNR['6k'] || '' });
+  if (validate()) {
+    const leftSnrValues = Object.values(leftSNR).filter(v => v && v !== '0.0' && v !== '>30.0').map(v => parseFloat(v));
+    const rightSnrValues = Object.values(rightSNR).filter(v => v && v !== '0.0' && v !== '>30.0').map(v => parseFloat(v));
+    if (leftResult === 'PASS' && leftSnrValues.length > 0 && leftSnrValues.every(v => v < 6.0)) {
+      if (!confirm('Left ear marked as PASS but all SNR values are below 6.0 dB. Continue?')) return;
     }
-  };
+    if (rightResult === 'PASS' && rightSnrValues.length > 0 && rightSnrValues.every(v => v < 6.0)) {
+      if (!confirm('Right ear marked as PASS but all SNR values are below 6.0 dB. Continue?')) return;
+    }
+    const hasLeftData = leftResult || Object.values(leftSNR).some(v => v && v !== '0.0');
+    const hasRightData = rightResult || Object.values(rightSNR).some(v => v && v !== '0.0');
+    let overrideNote = '';
+    if (hasLeftData && !hasRightData) {
+      if (!confirm('Only LEFT ear has been tested. Test the other ear or override this message.\n\nClick OK to override, Cancel to go back.')) return;
+      if (!confirm('Are you sure you want to override? If you proceed, the record will state that you chose to test only one ear.\n\nClick OK to confirm, Cancel to go back.')) return;
+      overrideNote = ' [Test was overridden - healthcare worker chose to test only LEFT ear]';
+    } else if (!hasLeftData && hasRightData) {
+      if (!confirm('Only RIGHT ear has been tested. Test the other ear or override this message.\n\nClick OK to override, Cancel to go back.')) return;
+      if (!confirm('Are you sure you want to override? If you proceed, the record will state that you chose to test only one ear.\n\nClick OK to confirm, Cancel to go back.')) return;
+      overrideNote = ' [Test was overridden - healthcare worker chose to test only RIGHT ear]';
+    }
+    onNext({ testType: 'OAE', oaeLeftResult: leftResult, oaeRightResult: rightResult, snr1_5kLeft: leftSNR['1.5k'] || '', snr2kLeft: leftSNR['2k'] || '', snr3kLeft: leftSNR['3k'] || '', snr4kLeft: leftSNR['4k'] || '', snr6kLeft: leftSNR['6k'] || '', snr1_5kRight: rightSNR['1.5k'] || '', snr2kRight: rightSNR['2k'] || '', snr3kRight: rightSNR['3k'] || '', snr4kRight: rightSNR['4k'] || '', snr6kRight: rightSNR['6k'] || '', oaeOverrideNote: overrideNote });
+  }
+};
   return React.createElement('div', { className: 'min-h-screen flex flex-col pb-24' },
     React.createElement(Header, { title: `TEOAE - ${protocol}`, onBack, user, onProfileClick }),
     React.createElement(Container, {},
