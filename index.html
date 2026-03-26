@@ -31,7 +31,7 @@ import React, { useState, useEffect, useContext, createContext } from 'react';
 import { createRoot } from 'react-dom/client';
 
 // 🔧 VERSION - Update this single line for new releases
-const APP_VERSION = 'v6.2';
+const APP_VERSION = 'v6.3';
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxbFB95miXBgigXEtHPBuFozWtxwrNqOrXFSH50ODoiHA1E4Yo6oWoD0qSDSWK2txPI/exec';
 const MASTER_SHEET_ID = '16evdSZDgIx7DkP3X7rxzkT8p8YtXsLykdIPXeIXhxxM';
@@ -81,7 +81,7 @@ const translations = {
     login: "Login", username: "Username", password: "Password", enterUsername: "Enter username",
     enterPassword: "Enter password", loggingIn: "Logging in...", invalidCredentials: "Invalid username or password",
     back: "Back", next: "Next", continue: "Continue", submit: "Submit", cancel: "Cancel", 
-    confirm: "Confirm", close: "Close", mainMenu: "Main Menu", selectOption: "Select an option",
+    confirm: "Confirm", close: "Close", mainMenu: "Main Menu", selectOption: "Select an option", selected: "selected",
     registerBaby: "Register Baby", startNewScreening: "Start a new screening process",
     sessionSetup: "Session Setup", startSession: "Start your screening session",
     operatorName: "Operator Name", operatorId: "Operator ID", ngo: "NGO", hospital: "Hospital",
@@ -124,7 +124,7 @@ const translations = {
     login: "लॉगिन", username: "उपयोगकर्ता नाम", password: "पासवर्ड", enterUsername: "उपयोगकर्ता नाम दर्ज करें",
     enterPassword: "पासवर्ड दर्ज करें", loggingIn: "लॉगिन हो रहा है...", invalidCredentials: "अमान्य उपयोगकर्ता नाम या पासवर्ड",
     back: "वापस", next: "अगला", continue: "जारी रखें", submit: "जमा करें", cancel: "रद्द करें",
-    confirm: "पुष्टि करें", close: "बंद करें", mainMenu: "मुख्य मेनू", selectOption: "एक विकल्प चुनें",
+    confirm: "पुष्टि करें", close: "बंद करें", mainMenu: "मुख्य मेनू", selectOption: "एक विकल्प चुनें", selected: "चयनित",
     registerBaby: "शिशु पंजीकरण", startNewScreening: "नई जांच प्रक्रिया शुरू करें",
     sessionSetup: "सत्र सेटअप", startSession: "अपना जांच सत्र शुरू करें",
     operatorName: "ऑपरेटर का नाम", operatorId: "ऑपरेटर आईडी", ngo: "एनजीओ", hospital: "अस्पताल",
@@ -167,7 +167,7 @@ const translations = {
     login: "ಲಾಗಿನ್", username: "ಬಳಕೆದಾರರ ಹೆಸರು", password: "ಪಾಸ್ವರ್ಡ್", enterUsername: "ಬಳಕೆದಾರರ ಹೆಸರು ನಮೂದಿಸಿ",
     enterPassword: "ಪಾಸ್ವರ್ಡ್ ನಮೂದಿಸಿ", loggingIn: "ಲಾಗಿನ್ ಆಗುತ್ತಿದೆ...", invalidCredentials: "ಅಮಾನ್ಯ ಬಳಕೆದಾರರ ಹೆಸರು ಅಥವಾ ಪಾಸ್ವರ್ಡ್",
     back: "ಹಿಂದೆ", next: "ಮುಂದೆ", continue: "ಮುಂದುವರಿಸಿ", submit: "ಸಲ್ಲಿಸಿ", cancel: "ರದ್ದುಮಾಡಿ",
-    confirm: "ದೃಢೀಕರಿಸಿ", close: "ಮುಚ್ಚಿ", mainMenu: "ಮುಖ್ಯ ಮೆನು", selectOption: "ಒಂದು ಆಯ್ಕೆಯನ್ನು ಆರಿಸಿ",
+    confirm: "ದೃಢೀಕರಿಸಿ", close: "ಮುಚ್ಚಿ", mainMenu: "ಮುಖ್ಯ ಮೆನು", selectOption: "ಒಂದು ಆಯ್ಕೆಯನ್ನು ಆರಿಸಿ", selected: "ಆಯ್ಕೆ ಮಾಡಲಾಗಿದೆ",
     registerBaby: "ಮಗುವಿನ ನೋಂದಣಿ", startNewScreening: "ಹೊಸ ಪರೀಕ್ಷಾ ಪ್ರಕ್ರಿಯೆಯನ್ನು ಪ್ರಾರಂಭಿಸಿ",
     sessionSetup: "ಸೆಷನ್ ಸೆಟಪ್", startSession: "ನಿಮ್ಮ ಪರೀಕ್ಷಾ ಸೆಷನ್ ಪ್ರಾರಂಭಿಸಿ",
     operatorName: "ಆಪರೇಟರ್ ಹೆಸರು", operatorId: "ಆಪರೇಟರ್ ಐಡಿ", ngo: "ಎನ್‌ಜಿಓ", hospital: "ಆಸ್ಪತ್ರೆ",
@@ -618,11 +618,10 @@ const MenuScreen = ({ user, onRegisterBaby, onProfileClick }) => {
 
 // Baby Registration Screen
 const BabyRegistrationScreen = ({ user, initialData, onBack, onNext, onClear, onProfileClick }) => {
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
   const [form, setForm] = useState({ babyId: initialData.babyId || generateBabyId(), babyName: initialData.babyName || '', dateOfBirth: initialData.dateOfBirth || '', gender: initialData.gender || '', gestationalAge: initialData.gestationalAge || '', parentName: initialData.parentName || '', parentPhone: initialData.parentPhone || '', parentEmail: initialData.parentEmail || '', riskFactors: initialData.riskFactors || [] });
   const [errors, setErrors] = useState({});
-  const riskOptions = [t('nicuOver5'), t('familyHistory'), t('craniofacial'), t('inUtero'), t('hyperbilirubinemia'), t('syndromes')];
-  const toggleRisk = (risk) => { setForm({ ...form, riskFactors: form.riskFactors.includes(risk) ? form.riskFactors.filter(r => r !== risk) : [...form.riskFactors, risk] }); };
+  const [showRiskModal, setShowRiskModal] = useState(false);
   const validate = () => {
     const newErrors = {};
     if (!form.babyName.trim()) newErrors.babyName = t('required');
@@ -637,7 +636,17 @@ const BabyRegistrationScreen = ({ user, initialData, onBack, onNext, onClear, on
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  const handleNext = () => { if (validate()) { onNext({ ...form, riskFactors: form.riskFactors, screeningId: generateScreeningId() }); } };
+  const handleNext = () => { 
+  if (validate()) { 
+    // Convert display keys to English keys for logging
+    const englishKeys = form.riskFactors.map(key => {
+      const displayLabels = Object.keys(RISK_FACTOR_KEYS[lang] || {});
+      const displayKey = displayLabels.find(label => RISK_FACTOR_KEYS[lang][label] === key);
+      return displayKey || key;
+    });
+    onNext({ ...form, riskFactors: englishKeys, screeningId: generateScreeningId() }); 
+  } 
+};
   return React.createElement('div', { className: 'min-h-screen flex flex-col pb-24' },
     React.createElement(Header, { title: t('babyRegistration'), onBack, user, onProfileClick }),
     React.createElement(Container, {},
@@ -655,12 +664,18 @@ const BabyRegistrationScreen = ({ user, initialData, onBack, onNext, onClear, on
           React.createElement(Input, { label: t('phoneNumber'), type: 'tel', value: form.parentPhone, onChange: (e) => setForm({ ...form, parentPhone: e.target.value.replace(/\D/g, '') }), placeholder: t('tenDigit'), maxLength: '10', error: errors.parentPhone }),
           React.createElement(Input, { label: t('email'), type: 'email', value: form.parentEmail, onChange: (e) => setForm({ ...form, parentEmail: e.target.value }), placeholder: t('emailPlaceholder') }),
           React.createElement('div', {},
-            React.createElement('label', { className: 'text-sm font-medium text-gray-700 ml-1 mb-2 block' }, t('riskFactors')),
-            React.createElement('div', { className: 'space-y-2' }, riskOptions.map(risk => React.createElement('label', { key: risk, className: 'flex items-center gap-3 p-3 bg-secondary rounded-xl cursor-pointer hover:bg-gray-200 transition-colors' },
-              React.createElement('input', { type: 'checkbox', checked: form.riskFactors.includes(risk), onChange: () => toggleRisk(risk), className: 'w-5 h-5 text-primary rounded focus:ring-2 focus:ring-primary/20' }),
-              React.createElement('span', { className: 'text-sm text-gray-700' }, risk)
-            )))
-          ),
+  React.createElement('label', { className: 'text-sm font-medium text-gray-700 ml-1 mb-2 block' }, t('riskFactors')),
+  React.createElement('button', {
+    type: 'button',
+    onClick: () => setShowRiskModal(true),
+    className: 'w-full py-3 px-4 bg-secondary rounded-xl text-left flex items-center justify-between hover:bg-gray-200 transition-colors'
+  },
+    React.createElement('span', { className: 'text-sm text-gray-700' },
+      form.riskFactors.length === 0 ? t('selectOption') : `${form.riskFactors.length} ${t('selected')}`
+    ),
+    React.createElement('span', { className: 'text-gray-400' }, '›')
+  )
+),
           React.createElement('div', { className: 'flex gap-3 pt-2' },
             React.createElement(Button, { variant: 'secondary', onClick: onClear }, t('clearAllFields')),
             React.createElement(Button, { onClick: handleNext }, t('next'))
@@ -668,6 +683,15 @@ const BabyRegistrationScreen = ({ user, initialData, onBack, onNext, onClear, on
         )
       )
     ),
+    showRiskModal && React.createElement(RiskFactorModal, {
+      selectedKeys: form.riskFactors,
+      onClose: () => setShowRiskModal(false),
+      onSave: (selected) => {
+        setForm({ ...form, riskFactors: selected });
+        setShowRiskModal(false);
+      },
+      lang
+    }),
     React.createElement(VersionWatermark)
   );
 };
