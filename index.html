@@ -1102,7 +1102,7 @@ const TEOAEEntryScreen = ({ user, protocol, onBack, onNext, onProfileClick }) =>
   if (validate()) {
     const leftSnrValues = Object.values(leftSNR).filter(v => v && v !== '0.0' && v !== '>30.0').map(v => parseFloat(v));
     const rightSnrValues = Object.values(rightSNR).filter(v => v && v !== '0.0' && v !== '>30.0').map(v => parseFloat(v));
-    iif (leftResult === 'PASS' && leftSnrValues.length > 0) {
+    if (leftResult === 'PASS' && leftSnrValues.length > 0) {
   const lowCount = leftSnrValues.filter(v => v < 6.0).length;
   const requiredGood = Math.ceil(frequencies.length / 2); // 3 for 5 freqs, 2 for 3 freqs
   const goodCount = leftSnrValues.filter(v => v >= 6.0).length;
