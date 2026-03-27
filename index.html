@@ -1373,12 +1373,26 @@ const RecommendationScreen = ({ user, record, onBack, onSubmit, onProfileClick }
   const { t } = useTranslation();
   const [recommendation, setRecommendation] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [showPhotoCapture, setShowPhotoCapture] = useState(false);
+
+  const requiresPhoto = (rec) => rec && !rec.startsWith('Pass');
+
   const handleSubmit = async () => {
+    if (requiresPhoto(recommendation)) {
+      setShowPhotoCapture(true);
+    } else {
+      await proceedWithSubmit(null);
+    }
+  };
+
+  const proceedWithSubmit = async (photoBase64) => {
     setSubmitting(true);
+    setShowPhotoCapture(false);
     const overrideNote = record.aabrOverrideNote || record.oaeOverrideNote || '';
     const finalRecommendation = recommendation + overrideNote;
-    await onSubmit({ recommendation: finalRecommendation });
+    await onSubmit({ recommendation: finalRecommendation, photoBase64 });
   };
+
   return React.createElement('div', { className: 'min-h-screen flex flex-col pb-24' },
     React.createElement(Header, { title: t('recommendation'), onBack, user, onProfileClick }),
     React.createElement(Container, {},
@@ -1405,6 +1419,11 @@ const RecommendationScreen = ({ user, record, onBack, onSubmit, onProfileClick }
         )
       )
     ),
+    showPhotoCapture && React.createElement(PhotoCaptureModal, {
+      screeningId: record.screeningId,
+      onPhotoReady: (base64) => proceedWithSubmit(base64),
+      onSkip: () => proceedWithSubmit(null)
+    }),
     React.createElement(StickyBottom, {}, React.createElement(Button, { onClick: handleSubmit, disabled: !recommendation.trim() || submitting }, submitting ? t('submitting') : t('submitScreening'))),
     React.createElement(VersionWatermark)
   );
