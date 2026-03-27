@@ -725,6 +725,10 @@ const SessionSetupScreen = ({ user, masterData, initialData, onComplete, onProfi
   const { t } = useTranslation();
   const hospitals = masterData.hospitals.filter(h => h[0] === user.ngo).map(h => h[1]);
   const devices = masterData.devices.filter(d => d[0] === user.ngo).map(d => d[1]);
+
+  useEffect(() => {
+    getSmartLocation();
+  }, []);
   const [form, setForm] = useState({ hwName: user.hwName, hwId: user.hwId, ngo: user.ngo, hospitalName: initialData?.hospitalName || '', deviceSerial: initialData?.deviceSerial || '', sessionDate: initialData?.sessionDate || new Date().toISOString().split('T')[0] });
   const canContinue = form.hospitalName && form.deviceSerial && form.sessionDate;
   return React.createElement('div', { className: 'min-h-screen flex flex-col pb-24' },
