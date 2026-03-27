@@ -31,7 +31,7 @@ import React, { useState, useEffect, useContext, createContext } from 'react';
 import { createRoot } from 'react-dom/client';
 
 // 🔧 VERSION - Update this single line for new releases
-const APP_VERSION = 'v6.5.8';
+const APP_VERSION = 'v7.0';
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxbFB95miXBgigXEtHPBuFozWtxwrNqOrXFSH50ODoiHA1E4Yo6oWoD0qSDSWK2txPI/exec';
 const MASTER_SHEET_ID = '16evdSZDgIx7DkP3X7rxzkT8p8YtXsLykdIPXeIXhxxM';
@@ -162,7 +162,16 @@ const translations = {
     onlyLetters: "Only letters, spaces, hyphens and periods allowed", cannotBeFuture: "Cannot be in future",
     enter10Digit: "Enter 10-digit number", allImpedanceRequired: "All impedance values required",
     atLeastOneEar: "At least one ear must be tested", resultRequired: "Result required",
-    snrRequired: "At least one SNR value required"
+    snrRequired: "At least one SNR value required",
+    takePhoto: "Take Photo of Device Screen",
+    photoInstructions: "Take a clear photo of the Sohum device screen showing the result",
+    photoTaken: "Photo captured successfully",
+    photoBlurry: "Image is blurry. Please retake photo.",
+    photoUploadFailed: "Photo upload failed. Screening saved.",
+    retakePhoto: "Take Again",
+    skipPhoto: "Skip Photo",
+    useAnyway: "Use Anyway",
+    uploadingPhoto: "Uploading photo..."
   },
   hi: {
     login: "लॉगिन", username: "उपयोगकर्ता नाम", password: "पासवर्ड", enterUsername: "उपयोगकर्ता नाम दर्ज करें",
@@ -205,7 +214,16 @@ const translations = {
     onlyLetters: "केवल अक्षर, स्थान, हाइफ़न और अवधि की अनुमति है", cannotBeFuture: "भविष्य में नहीं हो सकता",
     enter10Digit: "10-अंकों का नंबर दर्ज करें", allImpedanceRequired: "सभी प्रतिबाधा मान आवश्यक हैं",
     atLeastOneEar: "कम से कम एक कान का परीक्षण किया जाना चाहिए", resultRequired: "परिणाम आवश्यक",
-    snrRequired: "कम से कम एक SNR मान आवश्यक"
+    snrRequired: "कम से कम एक SNR मान आवश्यक",
+    takePhoto: "डिवाइस स्क्रीन की फोटो लें",
+    photoInstructions: "Sohum डिवाइस स्क्रीन की स्पष्ट फोटो लें जिसमें परिणाम दिखे",
+    photoTaken: "फोटो सफलतापूर्वक ली गई",
+    photoBlurry: "छवि धुंधली है। कृपया फोटो दोबारा लें।",
+    photoUploadFailed: "फोटो अपलोड विफल। जांच सहेजी गई।",
+    retakePhoto: "फिर से लें",
+    skipPhoto: "फोटो छोड़ें",
+    useAnyway: "फिर भी उपयोग करें",
+    uploadingPhoto: "फोटो अपलोड हो रही है..."
   },
   kn: {
     login: "ಲಾಗಿನ್", username: "ಬಳಕೆದಾರರ ಹೆಸರು", password: "ಪಾಸ್ವರ್ಡ್", enterUsername: "ಬಳಕೆದಾರರ ಹೆಸರು ನಮೂದಿಸಿ",
@@ -248,7 +266,16 @@ const translations = {
     onlyLetters: "ಕೇವಲ ಅಕ್ಷರಗಳು, ಸ್ಥಳಗಳು, ಹೈಫನ್‌ಗಳು ಮತ್ತು ಅವಧಿಗಳು ಅನುಮತಿಸಲಾಗಿದೆ", cannotBeFuture: "ಭವಿಷ್ಯದಲ್ಲಿ ಇರಲು ಸಾಧ್ಯವಿಲ್ಲ",
     enter10Digit: "10-ಅಂಕಿಯ ಸಂಖ್ಯೆಯನ್ನು ನಮೂದಿಸಿ", allImpedanceRequired: "ಎಲ್ಲಾ ಪ್ರತಿರೋಧ ಮೌಲ್ಯಗಳು ಅಗತ್ಯವಿದೆ",
     atLeastOneEar: "ಕನಿಷ್ಠ ಒಂದು ಕಿವಿಯನ್ನು ಪರೀಕ್ಷಿಸಬೇಕು", resultRequired: "ಫಲಿತಾಂಶ ಅಗತ್ಯವಿದೆ",
-    snrRequired: "ಕನಿಷ್ಠ ಒಂದು SNR ಮೌಲ್ಯ ಅಗತ್ಯವಿದೆ"
+    snrRequired: "ಕನಿಷ್ಠ ಒಂದು SNR ಮೌಲ್ಯ ಅಗತ್ಯವಿದೆ",
+    takePhoto: "ಸಾಧನದ ಪರದೆಯ ಫೋಟೋ ತೆಗೆಯಿರಿ",
+    photoInstructions: "ಫಲಿತಾಂಶ ತೋರಿಸುವ Sohum ಸಾಧನದ ಪರದೆಯ ಸ್ಪಷ್ಟ ಫೋಟೋ ತೆಗೆಯಿರಿ",
+    photoTaken: "ಫೋಟೋ ಯಶಸ್ವಿಯಾಗಿ ತೆಗೆಯಲಾಗಿದೆ",
+    photoBlurry: "ಚಿತ್ರ ಮಸುಕಾಗಿದೆ. ದಯವಿಟ್ಟು ಫೋಟೋ ಮತ್ತೆ ತೆಗೆಯಿರಿ.",
+    photoUploadFailed: "ಫೋಟೋ ಅಪ್ಲೋಡ್ ವಿಫಲವಾಗಿದೆ. ಪರೀಕ್ಷೆ ಉಳಿಸಲಾಗಿದೆ.",
+    retakePhoto: "ಮತ್ತೆ ತೆಗೆಯಿರಿ",
+    skipPhoto: "ಫೋಟೋ ಬಿಟ್ಟುಬಿಡಿ",
+    useAnyway: "ಹಾಗೆಯೇ ಬಳಸಿ",
+    uploadingPhoto: "ಫೋಟೋ ಅಪ್ಲೋಡ್ ಆಗುತ್ತಿದೆ..."
   }
 };
 
@@ -1306,6 +1333,94 @@ const SuccessScreen = ({ user, record, onSameBaby, onNewBaby, onProfileClick }) 
 
 // Main App
 const STEP = { LOADING: 'LOADING', LOGIN: 'LOGIN', SESSION: 'SESSION', MENU: 'MENU', BABY: 'BABY', TEST_SELECT: 'TEST_SELECT', AABR: 'AABR', OAE_TYPE: 'OAE_TYPE', OAE_PROTOCOL: 'OAE_PROTOCOL', OAE: 'OAE', REC: 'REC', SUCCESS: 'SUCCESS' };
+const compressPhoto = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('File read failed'));
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('Image load failed'));
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_W = 800;
+        const MAX_H = 600;
+        let w = img.width;
+        let h = img.height;
+        if (w > MAX_W || h > MAX_H) {
+          const ratio = Math.min(MAX_W / w, MAX_H / h);
+          w = Math.round(w * ratio);
+          h = Math.round(h * ratio);
+        }
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        const base64 = canvas.toDataURL('image/jpeg', 0.6).split(',')[1];
+        resolve({ base64, canvas });
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
+const isImageBlurry = (canvas) => {
+  const ctx = canvas.getContext('2d');
+  const { width, height } = canvas;
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const pixels = imageData.data;
+  const greyPixels = [];
+  for (let i = 0; i < pixels.length; i += 4) {
+    greyPixels.push(0.299 * pixels[i] + 0.587 * pixels[i + 1] + 0.114 * pixels[i + 2]);
+  }
+  const mean = greyPixels.reduce((a, b) => a + b, 0) / greyPixels.length;
+  const variance = greyPixels.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / greyPixels.length;
+  return variance < 100;
+};
+
+const uploadPhotoToDrive = async (base64Data, screeningId) => {
+  const MAX_ATTEMPTS = 3;
+  const DELAY_MS = 2000;
+  const sleep = (ms) => new Promise(res => setTimeout(res, ms));
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const response = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'uploadPhoto',
+          base64Data,
+          screeningId,
+          filename: `${screeningId}.jpg`
+        })
+      });
+      const result = await response.json();
+      if (result.status === 'success' && result.photoUrl) {
+        return result.photoUrl;
+      }
+    } catch (err) {
+      console.warn(`Photo upload attempt ${attempt} failed:`, err);
+    }
+    if (attempt < MAX_ATTEMPTS) await sleep(DELAY_MS);
+  }
+  return null;
+};
+
+const patchPhotoUrl = async (screeningId, photoUrl) => {
+  try {
+    await fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'patchPhoto',
+        screeningId,
+        photoUrl
+      })
+    });
+  } catch (err) {
+    console.warn('Photo URL patch failed:', err);
+  }
+};
 const saveToSheets = async (record) => {
   try {
     // Get GPS location
