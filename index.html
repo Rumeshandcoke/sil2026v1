@@ -31,7 +31,7 @@ import React, { useState, useEffect, useContext, createContext } from 'react';
 import { createRoot } from 'react-dom/client';
 
 // 🔧 VERSION - Update this single line for new releases
-const APP_VERSION = 'v7.0.1';
+const APP_VERSION = 'v7.0.2';
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxbFB95miXBgigXEtHPBuFozWtxwrNqOrXFSH50ODoiHA1E4Yo6oWoD0qSDSWK2txPI/exec';
 const MASTER_SHEET_ID = '16evdSZDgIx7DkP3X7rxzkT8p8YtXsLykdIPXeIXhxxM';
@@ -1598,9 +1598,20 @@ const App = () => {
     fetchAllLogData().then(data => setLogData(data));
   };
   const handleSubmit = async (data) => {
-    const final = { ...record, ...data };
+    const { photoBase64, ...rest } = data;
+    const final = { ...record, ...rest };
     const ok = await saveToSheets(final);
-    if (ok) { setStep(STEP.SUCCESS); } else { alert('Failed to save. Please try again.'); }
+    if (ok) {
+      setStep(STEP.SUCCESS);
+      if (photoBase64 && final.screeningId) {
+        uploadPhotoToDrive(photoBase64, final.screeningId).then(async (photoUrl) => {
+          const urlToLog = photoUrl || '[photo upload failed]';
+          await patchPhotoUrl(final.screeningId, urlToLog);
+        });
+      }
+    } else {
+      alert('Failed to save. Please try again.');
+    }
   };
   if (step === STEP.LOADING) {
     return React.createElement('div', { className: 'min-h-screen flex items-center justify-center' },
