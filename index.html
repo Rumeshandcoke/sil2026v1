@@ -31,7 +31,7 @@ import React, { useState, useEffect, useContext, createContext } from 'react';
 import { createRoot } from 'react-dom/client';
 
 // 🔧 VERSION - Update this single line for new releases
-const APP_VERSION = 'v6.5.4';
+const APP_VERSION = 'v6.5.5';
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxbFB95miXBgigXEtHPBuFozWtxwrNqOrXFSH50ODoiHA1E4Yo6oWoD0qSDSWK2txPI/exec';
 const MASTER_SHEET_ID = '16evdSZDgIx7DkP3X7rxzkT8p8YtXsLykdIPXeIXhxxM';
@@ -515,7 +515,7 @@ const Card = ({ children, className = '', onClick }) => React.createElement('div
 const Button = ({ children, onClick, variant = 'primary', disabled = false }) => React.createElement('button', { onClick, disabled, className: `w-full py-3.5 px-6 rounded-xl font-medium transition-all ${variant === 'primary' ? 'bg-primary text-white hover:bg-primary/90 disabled:bg-gray-300' : 'bg-secondary text-gray-700 hover:bg-gray-300'} ${disabled ? 'cursor-not-allowed' : 'active:scale-95'}` }, children);
 const Input = ({ label, error, ...props }) => React.createElement('div', { className: 'space-y-2' }, label && React.createElement('label', { className: 'text-sm font-medium text-gray-700 ml-1 block' }, label), React.createElement('input', { ...props, className: `w-full bg-secondary border-none rounded-xl px-4 py-3.5 text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 ${props.className || ''}` }), error && React.createElement('span', { className: 'text-xs text-red-500 ml-1' }, error));
 const Select = ({ label, error, children, ...props }) => React.createElement('div', { className: 'space-y-2' }, label && React.createElement('label', { className: 'text-sm font-medium text-gray-700 ml-1 block' }, label), React.createElement('select', { ...props, className: 'w-full bg-secondary border-none rounded-xl px-4 py-3.5 text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/20' }, children), error && React.createElement('span', { className: 'text-xs text-red-500 ml-1' }, error));
-const RadioGroup = ({ label, value, onChange, options }) => React.createElement('div', { className: 'space-y-2' }, label && React.createElement('label', { className: 'text-sm font-medium text-gray-700 ml-1 block' }, label), React.createElement('div', { className: 'flex gap-2' }, options.map(opt => React.createElement('button', { key: opt.value, onClick: () => onChange(opt.value), className: `flex-1 py-3 px-4 rounded-xl font-medium transition-all ${value === opt.value ? 'bg-primary text-white' : 'bg-secondary text-gray-700 hover:bg-gray-300'}` }, opt.label))));
+const RadioGroup = ({ label, value, onChange, options, error }) => React.createElement('div', { className: 'space-y-2' }, label && React.createElement('label', { className: 'text-sm font-medium text-gray-700 ml-1 block' }, label, React.createElement('span', { className: 'text-red-500' }, ' *')), React.createElement('div', { className: `flex gap-2 p-3 rounded-xl border-2 ${error ? 'border-red-500 bg-red-50' : 'border-transparent'}` }, options.map(opt => React.createElement('button', { key: opt.value, onClick: () => onChange(opt.value), className: `flex-1 py-3 px-4 rounded-xl font-medium transition-all ${value === opt.value ? 'bg-primary text-white' : 'bg-secondary text-gray-700 hover:bg-gray-300'}` }, opt.label))), error && React.createElement('span', { className: 'text-xs text-red-500 ml-1 mt-1 block' }, error));
 const StickyBottom = ({ children }) => React.createElement('div', { className: "fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg" }, React.createElement('div', { className: "max-w-[480px] mx-auto" }, children));
 // Risk Factor Selection Modal
 const RiskFactorModal = ({ selectedKeys, onClose, onSave, lang }) => {
@@ -788,10 +788,31 @@ const BabyRegistrationScreen = ({ user, initialData, onBack, onNext, onClear, on
     React.createElement(Container, {},
       React.createElement(Card, {},
         React.createElement('div', { className: 'space-y-4' },
-          React.createElement(Input, { label: t('babyId'), value: form.babyId, disabled: true, className: 'opacity-50 font-mono' }),
-          React.createElement(Input, { label: t('babyName'), value: form.babyName, onChange: (e) => setForm({ ...form, babyName: e.target.value }), placeholder: t('enterBabyName'), error: errors.babyName }),
+React.createElement('div', { className: 'bg-primary/10 border-2 border-primary rounded-xl p-3 mb-4' },
+  React.createElement('div', { className: 'flex items-center gap-2' },
+    React.createElement('span', { className: 'text-2xl' }, '👶'),
+    React.createElement('div', {},
+      React.createElement('div', { className: 'text-xs text-gray-600 font-medium' }, t('babyId')),
+      React.createElement('div', { className: 'text-lg font-bold text-primary' }, form.babyId)
+    )
+  )
+),
+React.createElement('div', {},
+  React.createElement('label', { className: 'text-sm font-medium text-gray-700 ml-1 mb-2 block' }, 
+    t('babyName'), 
+    React.createElement('span', { className: 'text-red-500' }, ' *')
+  ),
+  React.createElement('input', {
+    type: 'text',
+    value: form.babyName,
+    onChange: (e) => setForm({ ...form, babyName: e.target.value }),
+    placeholder: t('enterBabyName'),
+    className: `w-full py-3 px-4 bg-secondary rounded-xl border-2 ${errors.babyName ? 'border-red-500' : 'border-transparent'} focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors placeholder-gray-400`
+  }),
+  errors.babyName && React.createElement('span', { className: 'text-xs text-red-500 ml-1 mt-1 block' }, errors.babyName)
+),
           React.createElement(Input, { label: t('dateOfBirth'), type: 'date', value: form.dateOfBirth, max: new Date().toISOString().split('T')[0], onChange: (e) => setForm({ ...form, dateOfBirth: e.target.value }), error: errors.dateOfBirth }),
-          React.createElement(RadioGroup, { label: t('gender'), value: form.gender, onChange: (v) => setForm({ ...form, gender: v }), options: [{ label: t('male'), value: 'Male' }, { label: t('female'), value: 'Female' }, { label: t('other'), value: 'Other' }] }),
+          React.createElement(RadioGroup, { label: t('gender'), value: form.gender, onChange: (v) => setForm({ ...form, gender: v }), options: [{ label: t('male'), value: 'Male' }, { label: t('female'), value: 'Female' }, { label: t('other'), value: 'Other' }], error: errors.gender }),
           React.createElement(Select, { label: t('gestationalAge'), value: form.gestationalAge, onChange: (e) => setForm({ ...form, gestationalAge: e.target.value }), error: errors.gestationalAge },
             React.createElement('option', { value: '' }, t('selectWeeks')),
             Array.from({ length: 26 }, (_, i) => i + 25).map(w => React.createElement('option', { key: w, value: w }, w))
@@ -812,10 +833,33 @@ const BabyRegistrationScreen = ({ user, initialData, onBack, onNext, onClear, on
     React.createElement('span', { className: 'text-gray-400' }, '›')
   )
 ),
-          React.createElement('div', { className: 'flex gap-3 pt-2' },
-            React.createElement(Button, { variant: 'secondary', onClick: onClear }, t('clearAllFields')),
-            React.createElement(Button, { onClick: handleNext }, t('next'))
-          )
+          React.createElement('div', {},
+  Object.keys(errors).length > 0 && React.createElement('div', { className: 'mb-3 p-3 bg-red-50 border-2 border-red-500 rounded-xl' },
+    React.createElement('div', { className: 'flex items-start gap-2' },
+      React.createElement('span', { className: 'text-red-500 text-lg' }, '⚠️'),
+      React.createElement('div', {},
+        React.createElement('div', { className: 'text-sm font-semibold text-red-700 mb-1' }, 'Please complete the following:'),
+        React.createElement('div', { className: 'text-xs text-red-600' },
+          Object.entries(errors).map(([field, msg]) => {
+            const fieldNames = {
+              babyName: t('babyName'),
+              dateOfBirth: t('dateOfBirth'),
+              gender: t('gender'),
+              gestationalAge: t('gestationalAge'),
+              parentName: t('parentName'),
+              parentPhone: t('phoneNumber')
+            };
+            return fieldNames[field] || field;
+          }).join(', ')
+        )
+      )
+    )
+  ),
+  React.createElement('div', { className: 'flex gap-3 pt-2' },
+    React.createElement(Button, { variant: 'secondary', onClick: onClear }, t('clearAllFields')),
+    React.createElement(Button, { onClick: handleNext }, t('next'))
+  )
+)
         )
       )
     ),
