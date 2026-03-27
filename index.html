@@ -31,7 +31,7 @@ import React, { useState, useEffect, useContext, createContext } from 'react';
 import { createRoot } from 'react-dom/client';
 
 // 🔧 VERSION - Update this single line for new releases
-const APP_VERSION = 'v7.0.3';
+const APP_VERSION = 'v7.0.4';
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxbFB95miXBgigXEtHPBuFozWtxwrNqOrXFSH50ODoiHA1E4Yo6oWoD0qSDSWK2txPI/exec';
 const MASTER_SHEET_ID = '16evdSZDgIx7DkP3X7rxzkT8p8YtXsLykdIPXeIXhxxM';
@@ -1470,8 +1470,8 @@ const compressPhoto = (file) => {
       img.onerror = () => reject(new Error('Image load failed'));
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_W = 800;
-        const MAX_H = 600;
+        const MAX_W = 400;
+        const MAX_H = 300;
         let w = img.width;
         let h = img.height;
         if (w > MAX_W || h > MAX_H) {
@@ -1483,7 +1483,7 @@ const compressPhoto = (file) => {
         canvas.height = h;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, w, h);
-        const base64 = canvas.toDataURL('image/jpeg', 0.6).split(',')[1];
+        const base64 = canvas.toDataURL('image/jpeg', 0.4).split(',')[1];
         resolve({ base64, canvas });
       };
       img.src = e.target.result;
