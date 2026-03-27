@@ -19,7 +19,7 @@
       body { margin: 0; background-color: #f9fafb; display: flex; justify-content: center; min-height: 100vh; }
       #root { width: 100%; max-width: 480px; background-color: white; min-height: 100vh; box-shadow: 0 0 20px rgba(0,0,0,0.05); position: relative; overflow-x: hidden; }
       ::-webkit-scrollbar { width: 0px; background: transparent; }
-    </style>
+    </style> 
     <script type="importmap">
     { "imports": { "react-dom/": "https://esm.sh/react-dom@^19.0.0/", "react/": "https://esm.sh/react@^19.0.0/", "react": "https://esm.sh/react@^19.0.0" } }
     </script>
@@ -31,7 +31,7 @@ import React, { useState, useEffect, useContext, createContext } from 'react';
 import { createRoot } from 'react-dom/client';
 
 // 🔧 VERSION - Update this single line for new releases
-const APP_VERSION = 'v7.0.4';
+const APP_VERSION = 'v7.1.0';
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxbFB95miXBgigXEtHPBuFozWtxwrNqOrXFSH50ODoiHA1E4Yo6oWoD0qSDSWK2txPI/exec';
 const MASTER_SHEET_ID = '16evdSZDgIx7DkP3X7rxzkT8p8YtXsLykdIPXeIXhxxM';
@@ -1512,12 +1512,11 @@ const uploadPhotoToDrive = async (base64Data, screeningId) => {
   const sleep = (ms) => new Promise(res => setTimeout(res, ms));
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
-      const response = await fetch(SCRIPT_URL, {
+      await fetch(SCRIPT_URL + '?action=uploadPhoto', {
         method: 'POST',
         mode: 'no-cors',
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({
-          action: 'uploadPhoto',
           base64Data,
           screeningId,
           filename: `${screeningId}.jpg`
