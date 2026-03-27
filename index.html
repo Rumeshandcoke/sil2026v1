@@ -31,7 +31,7 @@ import React, { useState, useEffect, useContext, createContext } from 'react';
 import { createRoot } from 'react-dom/client';
 
 // 🔧 VERSION - Update this single line for new releases
-const APP_VERSION = 'v7.1.0';
+const APP_VERSION = 'v7.1.1';
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxbFB95miXBgigXEtHPBuFozWtxwrNqOrXFSH50ODoiHA1E4Yo6oWoD0qSDSWK2txPI/exec';
 const MASTER_SHEET_ID = '16evdSZDgIx7DkP3X7rxzkT8p8YtXsLykdIPXeIXhxxM';
@@ -1531,22 +1531,7 @@ const uploadPhotoToDrive = async (base64Data, screeningId) => {
   return null;
 };
 
-const patchPhotoUrl = async (screeningId, photoUrl) => {
-  try {
-    await fetch(SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({
-        action: 'patchPhoto',
-        screeningId,
-        photoUrl
-      })
-    });
-  } catch (err) {
-    console.warn('Photo URL patch failed:', err);
-  }
-};
+
 const saveToSheets = async (record) => {
   try {
     // Get GPS location
