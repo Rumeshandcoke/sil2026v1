@@ -31,7 +31,7 @@ import React, { useState, useEffect, useContext, createContext } from 'react';
 import { createRoot } from 'react-dom/client';
 
 // 🔧 VERSION - Update this single line for new releases
-const APP_VERSION = 'v6.5.5';
+const APP_VERSION = 'v6.5.6';
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxbFB95miXBgigXEtHPBuFozWtxwrNqOrXFSH50ODoiHA1E4Yo6oWoD0qSDSWK2txPI/exec';
 const MASTER_SHEET_ID = '16evdSZDgIx7DkP3X7rxzkT8p8YtXsLykdIPXeIXhxxM';
@@ -758,6 +758,11 @@ const BabyRegistrationScreen = ({ user, initialData, onBack, onNext, onClear, on
   const [form, setForm] = useState({ babyId: initialData.babyId || generateBabyId(), babyName: initialData.babyName || '', dateOfBirth: initialData.dateOfBirth || '', gender: initialData.gender || '', gestationalAge: initialData.gestationalAge || '', parentName: initialData.parentName || '', parentPhone: initialData.parentPhone || '', parentEmail: initialData.parentEmail || '', riskFactors: initialData.riskFactors || [] });
   const [errors, setErrors] = useState({});
   const [showRiskModal, setShowRiskModal] = useState(false);
+  const handleClear = () => {
+    setForm({ babyId: generateBabyId(), babyName: '', dateOfBirth: '', gender: '', gestationalAge: '', parentName: '', parentPhone: '', parentEmail: '', riskFactors: [] });
+    setErrors({});
+    onClear(); // Also clear parent state
+  };
   const validate = () => {
     const newErrors = {};
     if (!form.babyName.trim()) newErrors.babyName = t('required');
@@ -811,14 +816,13 @@ React.createElement('div', {},
   }),
   errors.babyName && React.createElement('span', { className: 'text-xs text-red-500 ml-1 mt-1 block' }, errors.babyName)
 ),
-          React.createElement(Input, { label: t('dateOfBirth'), type: 'date', value: form.dateOfBirth, max: new Date().toISOString().split('T')[0], onChange: (e) => setForm({ ...form, dateOfBirth: e.target.value }), error: errors.dateOfBirth }),
-          React.createElement(RadioGroup, { label: t('gender'), value: form.gender, onChange: (v) => setForm({ ...form, gender: v }), options: [{ label: t('male'), value: 'Male' }, { label: t('female'), value: 'Female' }, { label: t('other'), value: 'Other' }], error: errors.gender }),
-          React.createElement(Select, { label: t('gestationalAge'), value: form.gestationalAge, onChange: (e) => setForm({ ...form, gestationalAge: e.target.value }), error: errors.gestationalAge },
+          React.createElement(Input, { label: t('dateOfBirth') + ' *', type: 'date', value: form.dateOfBirth, max: new Date().toISOString().split('T')[0], onChange: (e) => setForm({ ...form, dateOfBirth: e.target.value }), error: errors.dateOfBirth }),          React.createElement(RadioGroup, { label: t('gender'), value: form.gender, onChange: (v) => setForm({ ...form, gender: v }), options: [{ label: t('male'), value: 'Male' }, { label: t('female'), value: 'Female' }, { label: t('other'), value: 'Other' }], error: errors.gender }),
+          React.createElement(Select, { label: t('gestationalAge') + ' *', value: form.gestationalAge, onChange: (e) => setForm({ ...form, gestationalAge: e.target.value }), error: errors.gestationalAge },
             React.createElement('option', { value: '' }, t('selectWeeks')),
             Array.from({ length: 26 }, (_, i) => i + 25).map(w => React.createElement('option', { key: w, value: w }, w))
           ),
-          React.createElement(Input, { label: t('parentName'), value: form.parentName, onChange: (e) => setForm({ ...form, parentName: e.target.value }), placeholder: t('enterParentName'), error: errors.parentName }),
-          React.createElement(Input, { label: t('phoneNumber'), type: 'tel', value: form.parentPhone, onChange: (e) => setForm({ ...form, parentPhone: e.target.value.replace(/\D/g, '') }), placeholder: t('tenDigit'), maxLength: '10', error: errors.parentPhone }),
+          React.createElement(Input, { label: t('parentName') + ' *', value: form.parentName, onChange: (e) => setForm({ ...form, parentName: e.target.value }), placeholder: t('enterParentName'), error: errors.parentName }),
+          React.createElement(Input, { label: t('phoneNumber') + ' *', type: 'tel', value: form.parentPhone, onChange: (e) => setForm({ ...form, parentPhone: e.target.value.replace(/\D/g, '') }), placeholder: t('tenDigit'), maxLength: '10', error: errors.parentPhone }),
           React.createElement(Input, { label: t('email'), type: 'email', value: form.parentEmail, onChange: (e) => setForm({ ...form, parentEmail: e.target.value }), placeholder: t('emailPlaceholder') }),
           React.createElement('div', {},
   React.createElement('label', { className: 'text-sm font-medium text-gray-700 ml-1 mb-2 block' }, t('riskFactors')),
@@ -856,7 +860,7 @@ React.createElement('div', {},
     )
   ),
   React.createElement('div', { className: 'flex gap-3 pt-2' },
-    React.createElement(Button, { variant: 'secondary', onClick: onClear }, t('clearAllFields')),
+    React.createElement(Button, { variant: 'secondary', onClick: handleClear }, t('clearAllFields')),
     React.createElement(Button, { onClick: handleNext }, t('next'))
   )
 )
