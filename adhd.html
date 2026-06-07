@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#202B5D" />
+  <title>Morning Co-Pilot</title>
+  <link rel="manifest" href="manifest.json" />
+  <style>
+    :root {
+      --brand: #202B5D; 
+      --bg: #f7f7fb;
+      --card: #ffffff;
+      --text: #111827;
+      --muted: #6b7280;
+      --danger: #b42318;
+      --warn: #b54708;
+      --good: #067647;
+      --border: #e5e7eb;
+      --timerHue: 140;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(32,43,93,.10), transparent 32%),
+        radial-gradient(circle at 80% 20%, rgba(255,111,145,.09), transparent 30%),
+        var(--bg);
+      color: var(--text);
+    }
+    .app {
+      max-width: 540px;
+      margin: 0 auto;
+      min-height: 100svh;
+      padding: 16px 14px 88px;
+    }
+    .hero {
+      background: linear-gradient(135deg, var(--brand), #34428c);
+      color: white;
+      border-radius: 26px;
+      padding: 22px;
+      box-shadow: 0 14px 32px rgba(32,43,93,0.22);
+    }
+    h1, h2, h3 { margin: 0; }
+    h1 { font-size: 27px; letter-spacing: -0.5px; }
+    .sub { opacity: .86; margin-top: 8px; line-height: 1.4; }
+    .card {
+      background: rgba(255,255,255,.92);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 18px;
+      margin-top: 14px;
+      box-shadow: 0 10px 28px rgba(15,23,42,0.06);
+    }
+    label { display: block; font-weight: 800; margin-bottom: 8px; }
+    input, select {
+      width: 100%;
+      font-size: 18px;
+      padding: 13px 14px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: white;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .choice {
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 14px;
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: white;
+      cursor: pointer;
+    }
+    .choice input { width: auto; }
+    button {
+      border: 0;
+      border-radius: 17px;
+      padding: 14px 16px;
+      font-weight: 900;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .primary { width: 100%; background: var(--brand); color: white; margin-top: 14px; }
+    .secondary { width: 100%; background: #eef0f7; color: var(--brand); margin-top: 10px; }
+    .ghost { background: white; color: var(--brand); border: 1px solid var(--border); }
+    .tiny { font-size: 13px; color: var(--muted); line-height: 1.45; }
+    .topStatus {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 9px;
+      margin-top: 14px;
+    }
+    .pill {
+      border-radius: 18px;
+      padding: 12px;
+      background: #f9fafb;
+      border: 1px solid var(--border);
+      min-width: 0;
+    }
+    .pill .k { color: var(--muted); font-size: 10px; font-weight: 900; text-transform: uppercase; }
+    .pill .v { margin-top: 5px; font-size: 18px; font-weight: 950; white-space: nowrap; }
+    .timerCard {
+      position: relative;
+      overflow: hidden;
+      border-radius: 34px;
+      padding: 24px 16px 18px;
+      text-align: center;
+      background:
+        radial-gradient(circle at 50% -10%, hsla(var(--timerHue), 85%, 60%, .30), transparent 40%),
+        linear-gradient(180deg, #ffffff, hsl(var(--timerHue), 65%, 96%));
+      border: 1px solid hsla(var(--timerHue), 60%, 45%, .24);
+      box-shadow: 0 20px 44px rgba(15,23,42,.10);
+    }
+    .clockShell {
+      margin: 6px auto 10px;
+      width: min(100%, 430px);
+      border-radius: 44px;
+      padding: 20px 12px 22px;
+      background: #fff;
+      box-shadow:
+        inset 0 -2px 0 rgba(0,0,0,.08),
+        0 18px 45px hsla(var(--timerHue), 65%, 35%, .16);
+      border: 1px solid rgba(0,0,0,.06);
+    }
+    .countdown {
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -5px;
+      font-size: clamp(86px, 24vw, 138px);
+      line-height: .9;
+      font-weight: 1000;
+      color: #030712;
+      text-shadow: 0 2px 0 rgba(255,255,255,.8);
+    }
+    .taskName {
+      font-size: 22px;
+      font-weight: 950;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      margin-top: 10px;
+    }
+    .finishBy { margin-top: 6px; color: var(--muted); font-weight: 750; }
+    .message {
+      padding: 14px;
+      border-radius: 18px;
+      margin-top: 12px;
+      font-weight: 800;
+      line-height: 1.4;
+    }
+    .message.good { background: #dcfae6; color: var(--good); }
+    .message.warn { background: #fef0c7; color: var(--warn); }
+    .message.danger { background: #fee4e2; color: var(--danger); }
+    .progress {
+      height: 13px;
+      width: 100%;
+      border-radius: 999px;
+      background: rgba(0,0,0,.08);
+      overflow: hidden;
+      margin-top: 16px;
+    }
+    .bar {
+      height: 100%;
+      width: 0%;
+      background: hsl(var(--timerHue), 78%, 42%);
+      transition: width .2s, background .2s;
+    }
+    .buttonGrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .list { margin: 0; padding: 0; list-style: none; }
+    .list li {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .list li:last-child { border-bottom: 0; }
+    .doneText { color: var(--good); font-weight: 850; }
+    .activeText { color: var(--brand); font-weight: 950; }
+    .skipText { color: var(--muted); text-decoration: line-through; }
+    .toast {
+      position: fixed;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      max-width: 500px;
+      width: calc(100% - 28px);
+      background: #111827;
+      color: white;
+      padding: 14px 16px;
+      border-radius: 18px;
+      box-shadow: 0 18px 40px rgba(0,0,0,.24);
+      z-index: 99;
+      font-weight: 800;
+    }
+    details summary { cursor: pointer; font-weight: 800; color: var(--brand); }
+    pre { white-space: pre-wrap; font-size: 12px; color: var(--muted); }
+    .footerNav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(14px);
+      border-top: 1px solid var(--border);
+      padding: 10px 16px max(10px, env(safe-area-inset-bottom));
+    }
+    .footerNavInner {
+      max-width: 540px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div id="toast" class="toast hidden"></div>
+
+  <main class="app">
+    <section class="hero">
+      <h1>Morning Co-Pilot</h1>
+      <div class="sub">A gentle adaptive routine that protects the important stuff and quietly rescues late mornings.</div>
+    </section>
+
+    <section id="setup" class="card">
+      <h2>Today’s setup</h2>
+
+      <div class="row" style="margin-top:14px;">
+        <div>
+          <label for="arrivalTime">Reach office by</label>
+          <input id="arrivalTime" type="time" value="09:00" />
+        </div>
+        <div>
+          <label for="leaveTarget">Leave home by</label>
+          <input id="leaveTarget" type="time" value="08:10" />
+        </div>
+      </div>
+
+      <div style="margin-top:14px;">
+        <label>Morning work</label>
+        <select id="morningWork">
+          <option value="20">Quick, 20 min</option>
+          <option value="40">Standard, 40 min</option>
+          <option value="60">Deep, 60 min</option>
+        </select>
+      </div>
+
+      <label class="choice">
+        <input id="hairWash" type="checkbox" />
+        Hair wash today
+      </label>
+
+      <label class="choice">
+        <input id="sosMode" type="checkbox" />
+        SOS start. Suspend morning work unless time comes back.
+      </label>
+
+      <button class="primary" onclick="startRoutine()">Start routine</button>
+      <p class="tiny">Use native iPhone alarms for wake up. This starts once she taps Start routine.</p>
+    </section>
+
+    <section id="runner" class="hidden">
+      <div class="topStatus">
+        <div class="pill">
+          <div class="k">Now</div>
+          <div class="v" id="nowText">--:--</div>
+        </div>
+        <div class="pill">
+          <div class="k">Leave</div>
+          <div class="v" id="leaveText">08:10</div>
+        </div>
+        <div class="pill">
+          <div class="k">Buffer</div>
+          <div class="v" id="bufferText">--</div>
+        </div>
+      </div>
+
+      <div id="bufferMessage" class="message warn">Calculating...</div>
+
+      <div class="timerCard card">
+        <div class="clockShell">
+          <div id="taskCountdown" class="countdown">00:00</div>
+        </div>
+        <div id="taskName" class="taskName">Task</div>
+        <div id="finishByText" class="finishBy">Finish by --:--</div>
+        <div class="progress"><div class="bar" id="progressBar"></div></div>
+
+        <button class="primary" onclick="completeCurrent()">Done</button>
+
+        <div class="buttonGrid">
+          <button class="secondary" onclick="undoDone()">Undo</button>
+          <button class="secondary" onclick="recalculateNow()">Reality check</button>
+        </div>
+
+        <button id="sosButton" class="secondary" onclick="activateSOS()">SOS, I woke up late</button>
+      </div>
+
+      <div class="card">
+        <h3>Today’s plan</h3>
+        <ul class="list" id="planList"></ul>
+      </div>
+
+      <div class="card">
+        <details>
+          <summary>Debug timings</summary>
+          <pre id="debugText"></pre>
+        </details>
+      </div>
+    </section>
+
+    <section id="finished" class="hidden card">
+      <h2>Ready to leave ✨</h2>
+      <div id="finalMessage" class="message good"></div>
+      <button class="primary" onclick="resetApp()">Start again tomorrow</button>
+    </section>
+  </main>
+
+  <div id="footer" class="footerNav hidden">
+    <div class="footerNavInner">
+      <button class="secondary" onclick="saveAndExit()">Save</button>
+      <button class="secondary" onclick="resetApp()">Reset</button>
+    </div>
+  </div>
+
+<script>
+const DEFAULT_TASKS = [
+  { id:"morningWork", name:"Morning work", max:20, min:20, tier:99, required:true },
+  { id:"brush", name:"Brush + poop", max:15, min:12, tier:99, required:true },
+  { id:"shower", name:"Shower", max:30, min:20, tier:99, required:true },
+  { id:"dress", name:"Dress up", max:20, min:10, tier:2, required:true },
+  { id:"breakfast", name:"Make breakfast + smoothie", max:20, min:5, tier:3, required:true },
+  { id:"makeup", name:"Make up", max:15, min:5, tier:4, required:true },
+  { id:"pack", name:"Pack bag", max:10, min:5, tier:1, required:true },
+];
+
+let state = {
+  started: false,
+  startMs: null,
+  leaveTarget: "08:10",
+  arrivalTime: "09:00",
+  morningWork: 20,
+  hairWash: false,
+  sosMode: false,
+  sosActivated: false,
+  currentIndex: 0,
+  completed: [],
+  history: [],
+  taskStartedMs: null,
+  currentTaskId: null,
+  currentTaskAssignedMin: null,
+  warnedTaskIds: []
+};
+
+function pad(n){ return String(n).padStart(2,"0"); }
+function formatClock(ms){
+  const d = new Date(ms);
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function minToMs(m){ return m * 60 * 1000; }
+function msToMin(ms){ return Math.round(ms / 60000); }
+function formatCountdown(ms){
+  const total = Math.max(0, Math.floor(ms/1000));
+  const m = Math.floor(total/60);
+  const s = total % 60;
+  return `${pad(m)}:${pad(s)}`;
+}
+function toast(msg){
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.remove("hidden");
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => el.classList.add("hidden"), 3500);
+}
+function beep(){
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.38);
+  } catch(e) {}
+}
+function parseTargetTime(hhmm){
+  const [h,m] = hhmm.split(":").map(Number);
+  const now = new Date();
+  const target = new Date(now);
+  target.setHours(h,m,0,0);
+  if (target.getTime() <= now.getTime()) target.setDate(target.getDate() + 1);
+  return target.getTime();
+}
+
+function buildTasks(){
+  const tasks = JSON.parse(JSON.stringify(DEFAULT_TASKS));
+  const mw = tasks.find(t => t.id === "morningWork");
+
+  if (state.sosMode || state.sosActivated) {
+    mw.max = 0;
+    mw.min = 0;
+    mw.suspended = true;
+  } else {
+    mw.max = Number(state.morningWork);
+    mw.min = Number(state.morningWork);
+  }
+
+  if (state.hairWash) {
+    const sh = tasks.find(t => t.id === "shower");
+    sh.name = "Shower + hair wash";
+    sh.max = 70;
+    sh.min = 40;
+  }
+
+  return tasks;
+}
+
+function compressTasks(tasks, availableMinutes){
+  const copy = JSON.parse(JSON.stringify(tasks));
+  const maxTotal = copy.reduce((s,t)=>s+t.max,0);
+  let cutNeeded = Math.max(0, maxTotal - availableMinutes);
+
+  const tiers = [1,2,3,4,99];
+
+  for (const tier of tiers) {
+    if (cutNeeded <= 0) break;
+    const group = copy.filter(t => t.tier === tier && t.max > t.min);
+    for (const t of group) {
+      if (cutNeeded <= 0) break;
+      const possible = t.max - t.min;
+      const cut = Math.min(possible, cutNeeded);
+      t.assigned = t.max - cut;
+      cutNeeded -= cut;
+    }
+  }
+
+  for (const t of copy) {
+    if (t.assigned == null) t.assigned = t.max;
+  }
+
+  copy.unresolvedLate = cutNeeded;
+  copy.maxTotal = maxTotal;
+  copy.availableMinutes = availableMinutes;
+  return copy;
+}
+
+function getRemainingBaseTasks(){
+  const base = buildTasks();
+  return base.filter((t, idx) => idx >= state.currentIndex && !state.completed.includes(t.id));
+}
+
+function skipZeroDurationTasks(){
+  let changed = false;
+  const base = buildTasks();
+  while (state.currentIndex < base.length) {
+    const t = base[state.currentIndex];
+    if (t.max === 0 && t.min === 0) {
+      state.history.push({ action:"skip", taskId:t.id, previousIndex:state.currentIndex });
+      state.completed.push(t.id);
+      state.currentIndex += 1;
+      changed = true;
+    } else {
+      break;
+    }
+  }
+  return changed;
+}
+
+function ensureCurrentTaskAssignment(){
+  skipZeroDurationTasks();
+
+  const remaining = getRemainingBaseTasks();
+  if (!remaining.length) return null;
+
+  const active = remaining[0];
+
+  if (state.currentTaskId !== active.id || state.currentTaskAssignedMin == null) {
+    const leaveMs = parseTargetTime(state.leaveTarget);
+    const availableMinutes = Math.floor((leaveMs - Date.now()) / 60000);
+    const compressed = compressTasks(remaining, availableMinutes);
+    const compressedActive = compressed.find(t => t.id === active.id) || active;
+
+    state.currentTaskId = active.id;
+    state.currentTaskAssignedMin = compressedActive.assigned;
+    state.taskStartedMs = Date.now();
+    persist();
+  }
+
+  return {
+    ...active,
+    assigned: state.currentTaskAssignedMin,
+    startMs: state.taskStartedMs,
+    endMs: state.taskStartedMs + minToMs(state.currentTaskAssignedMin)
+  };
+}
+
+function generatePlan(){
+  const now = Date.now();
+  const leaveMs = parseTargetTime(state.leaveTarget);
+  const base = buildTasks();
+  const active = ensureCurrentTaskAssignment();
+
+  let planTasks = [];
+  let cursor = now;
+
+  if (active) {
+    active.startMs = state.taskStartedMs;
+    active.endMs = state.taskStartedMs + minToMs(active.assigned);
+    planTasks.push(active);
+    cursor = Math.max(now, active.endMs);
+  }
+
+  const activeId = active ? active.id : null;
+  const futureTasks = base.filter((t, idx) =>
+    idx >= state.currentIndex &&
+    !state.completed.includes(t.id) &&
+    t.id !== activeId
+  );
+
+  const availableForFuture = Math.floor((leaveMs - cursor) / 60000);
+  const compressedFuture = compressTasks(futureTasks, availableForFuture);
+
+  for (const t of compressedFuture) {
+    t.startMs = cursor;
+    t.endMs = cursor + minToMs(t.assigned);
+    cursor = t.endMs;
+    planTasks.push(t);
+  }
+
+  const completedTasks = base
+    .filter(t => state.completed.includes(t.id))
+    .map(t => ({...t, done:true, assigned:0}));
+
+  const ordered = [];
+  for (const t of base) {
+    const done = completedTasks.find(x => x.id === t.id);
+    const planned = planTasks.find(x => x.id === t.id);
+    if (done) ordered.push(done);
+    else if (planned) ordered.push(planned);
+  }
+
+  return {
+    tasks: ordered,
+    active,
+    leaveMs,
+    projectedEndMs: cursor,
+    unresolvedLate: compressedFuture.unresolvedLate || 0,
+    availableForFuture,
+    debug: {
+      now: formatClock(now),
+      leave: new Date(leaveMs).toString(),
+      activeTask: active ? active.name : "none",
+      activeAssignedMin: active ? active.assigned : 0,
+      activeStarted: active ? new Date(active.startMs).toString() : "none",
+      activeEnds: active ? new Date(active.endMs).toString() : "none",
+      availableForFuture,
+      projectedEnd: new Date(cursor).toString(),
+      unresolvedLate: compressedFuture.unresolvedLate || 0,
+      sosActivated: state.sosActivated
+    }
+  };
+}
+
+function startRoutine(){
+  clearTimeout(window._timer);
+  state.arrivalTime = document.getElementById("arrivalTime").value;
+  state.leaveTarget = document.getElementById("leaveTarget").value;
+  state.morningWork = Number(document.getElementById("morningWork").value);
+  state.hairWash = document.getElementById("hairWash").checked;
+  state.sosMode = document.getElementById("sosMode").checked;
+  state.sosActivated = state.sosMode;
+  state.started = true;
+  state.startMs = Date.now();
+  state.taskStartedMs = Date.now();
+  state.currentIndex = 0;
+  state.completed = [];
+  state.history = [];
+  state.currentTaskId = null;
+  state.currentTaskAssignedMin = null;
+  state.warnedTaskIds = [];
+  persist();
+  showRunner();
+}
+
+function showRunner(){
+  document.getElementById("setup").classList.add("hidden");
+  document.getElementById("finished").classList.add("hidden");
+  document.getElementById("runner").classList.remove("hidden");
+  document.getElementById("footer").classList.remove("hidden");
+  tick();
+}
+
+function tick(){
+  if (!state.started) return;
+  clearTimeout(window._timer);
+
+  const plan = generatePlan();
+  const active = plan.active;
+
+  document.getElementById("nowText").textContent = formatClock(Date.now());
+  document.getElementById("leaveText").textContent = state.leaveTarget;
+
+  const bufferMin = msToMin(plan.leaveMs - plan.projectedEndMs);
+  document.getElementById("bufferText").textContent =
+    bufferMin >= 0 ? `+${bufferMin}m` : `-${Math.abs(bufferMin)}m`;
+
+  const msg = document.getElementById("bufferMessage");
+
+  if (plan.unresolvedLate > 0) {
+    msg.className = "message danger";
+    msg.textContent = `Danger mode. Even after compression, the plan is about ${plan.unresolvedLate} min short. Skip anything non-essential.`;
+  } else if (bufferMin < 0) {
+    msg.className = "message danger";
+    msg.textContent = `Running ${Math.abs(bufferMin)} min behind. The remaining tasks have been compressed.`;
+  } else {
+    msg.className = "message warn";
+    msg.textContent = `On mission. Keep going task by task.`;
+  }
+
+  document.getElementById("sosButton").classList.toggle("hidden", state.sosActivated);
+
+  if (!active) return finishRoutine(plan);
+
+  document.getElementById("taskName").textContent = active.name;
+  document.getElementById("finishByText").textContent = `Finish by ${formatClock(active.endMs)}`;
+
+  const durationMs = Math.max(1, active.endMs - active.startMs);
+  const remainingMs = active.endMs - Date.now();
+  const remainingRatio = Math.max(0, Math.min(1, remainingMs / durationMs));
+  const elapsedRatio = 1 - remainingRatio;
+
+  document.getElementById("taskCountdown").textContent = formatCountdown(remainingMs);
+
+  const hue = Math.round(0 + remainingRatio * 140); // red to green
+  document.documentElement.style.setProperty("--timerHue", hue);
+
+  const progress = Math.min(100, Math.max(0, elapsedRatio * 100));
+  document.getElementById("progressBar").style.width = progress + "%";
+
+  if (remainingRatio <= 0.10 && !state.warnedTaskIds.includes(active.id)) {
+    state.warnedTaskIds.push(active.id);
+    beep();
+    toast(`Last 10%. Wrap up ${active.name}.`);
+  }
+
+  renderPlan(plan, active.id);
+  document.getElementById("debugText").textContent = JSON.stringify(plan.debug, null, 2);
+
+  persist();
+  window._timer = setTimeout(tick, 1000);
+}
+
+function renderPlan(plan, activeId){
+  const ul = document.getElementById("planList");
+  ul.innerHTML = "";
+
+  for (const t of plan.tasks) {
+    const li = document.createElement("li");
+    let cls = "";
+    let right = "";
+
+    if (t.done || state.completed.includes(t.id)) {
+      cls = "doneText";
+      right = t.suspended ? "Suspended" : "Done";
+    } else if (t.id === activeId) {
+      cls = "activeText";
+      right = `${formatClock(t.startMs)} → ${formatClock(t.endMs)} · ${t.assigned} min`;
+    } else if (t.assigned === 0) {
+      cls = "skipText";
+      right = "Suspended";
+    } else {
+      right = `${formatClock(t.startMs)} → ${formatClock(t.endMs)} · ${t.assigned} min`;
+    }
+
+    li.innerHTML = `<span class="${cls}">${t.name}</span><span>${right}</span>`;
+    ul.appendChild(li);
+  }
+}
+
+function completeCurrent(){
+  const plan = generatePlan();
+  const active = plan.active;
+  if (!active) return finishRoutine(plan);
+
+  state.history.push({
+    action:"done",
+    taskId: active.id,
+    previousIndex: state.currentIndex,
+    previousTaskStartedMs: state.taskStartedMs,
+    previousAssignedMin: state.currentTaskAssignedMin
+  });
+
+  state.completed.push(active.id);
+  const all = buildTasks();
+  state.currentIndex = all.findIndex(t => t.id === active.id) + 1;
+
+  state.currentTaskId = null;
+  state.currentTaskAssignedMin = null;
+  state.taskStartedMs = Date.now();
+
+  persist();
+  tick();
+}
+
+function undoDone(){
+  const last = state.history.pop();
+  if (!last) {
+    toast("Nothing to undo yet.");
+    return;
+  }
+
+  state.completed = state.completed.filter(id => id !== last.taskId);
+  state.currentIndex = last.previousIndex ?? Math.max(0, state.currentIndex - 1);
+  state.currentTaskId = null;
+  state.currentTaskAssignedMin = null;
+  state.taskStartedMs = Date.now();
+
+  if (last.action === "done") {
+    toast("Undone. Back to previous task.");
+  } else if (last.action === "skip") {
+    toast("Restored skipped task.");
+  }
+
+  persist();
+  tick();
+}
+
+function recalculateNow(){
+  state.currentTaskId = null;
+  state.currentTaskAssignedMin = null;
+  state.taskStartedMs = Date.now();
+  toast("Recalculated from now.");
+  persist();
+  tick();
+}
+
+function activateSOS(){
+  state.sosActivated = true;
+  state.sosMode = true;
+
+  const activeId = state.currentTaskId;
+  if (activeId === "morningWork") {
+    state.history.push({
+      action:"skip",
+      taskId:"morningWork",
+      previousIndex: state.currentIndex
+    });
+    if (!state.completed.includes("morningWork")) state.completed.push("morningWork");
+    state.currentIndex = 1;
+    toast("SOS activated. Morning work skipped. Moving on.");
+  } else {
+    toast("SOS activated. Morning work suspended.");
+  }
+
+  state.currentTaskId = null;
+  state.currentTaskAssignedMin = null;
+  state.taskStartedMs = Date.now();
+  persist();
+  tick();
+}
+
+function finishRoutine(plan){
+  clearTimeout(window._timer);
+  state.started = false;
+  const spare = msToMin(plan.leaveMs - Date.now());
+
+  document.getElementById("runner").classList.add("hidden");
+  document.getElementById("footer").classList.add("hidden");
+  document.getElementById("finished").classList.remove("hidden");
+
+  let text = "";
+  if (spare > 0) {
+    text = `Surprise, you’re ${spare} minutes ahead. Take a break, sip some water. Your boyfriend loves you ❤️`;
+  } else if (spare === 0) {
+    text = `Perfect landing. Time to leave now. Your boyfriend loves you ❤️`;
+  } else {
+    text = `You’re ${Math.abs(spare)} minutes past leave time. Shoes on, bag up, go now. Your boyfriend loves you ❤️`;
+  }
+
+  document.getElementById("finalMessage").textContent = text;
+  persist();
+}
+
+function saveAndExit(){
+  persist();
+  toast("Saved. You can refresh and continue.");
+}
+
+function resetApp(){
+  clearTimeout(window._timer);
+  localStorage.removeItem("morningCopilotState");
+  location.reload();
+}
+
+function persist(){
+  localStorage.setItem("morningCopilotState", JSON.stringify(state));
+}
+
+function restore(){
+  const raw = localStorage.getItem("morningCopilotState");
+  if (!raw) return;
+
+  try {
+    const saved = JSON.parse(raw);
+    state = {...state, ...saved};
+
+    document.getElementById("arrivalTime").value = state.arrivalTime || "09:00";
+    document.getElementById("leaveTarget").value = state.leaveTarget || "08:10";
+    document.getElementById("morningWork").value = String(state.morningWork || 20);
+    document.getElementById("hairWash").checked = !!state.hairWash;
+    document.getElementById("sosMode").checked = !!state.sosMode;
+
+    if (state.started) showRunner();
+  } catch(e) {}
+}
+
+if ("serviceWorker" in navigator && location.protocol !== "file:") {
+  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js"));
+}
+
+restore();
+</script>
+</body>
+</html>
